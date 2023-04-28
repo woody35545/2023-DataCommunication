@@ -10,7 +10,7 @@
 #include <net/if.h>
 #include <sys/ioctl.h>
 #include <errno.h>
-#include <malloc.h>
+#include <string.h>
 #define MAX_SIZE 300
 #define IP_ADDRESS "127.0.0.1"
 
@@ -287,17 +287,25 @@ void L2_send(char *input, int length)
         }
         else
         {
-            struct L1 *tempL1 = (struct L1 *)input; 
+
+            // L1 payload에 있는 Addr.ip 값을 L2의 payload에 담을 addrData.ip에 복사해서 넣어줌
+            struct L1 *tempL1 = (struct L1 *)input; // input -> struct L1 
+            // tempAddr는 인자로 받은 L1.L1_data를 가리킴
             struct Addr *tempAddr = (struct Addr *)tempL1->L1_data; 
+            // tempAddr(L1_data.ip의 시작주소)부터 addrData.ip의 size 만큼 addrData.ip로 복사
             memcpy(addrData.ip, tempAddr->ip, sizeof(addrData.ip)); 
 
             unsigned char mac[] = {0x00, 0x10, 0x00, 0x0A, 0x00, 0x00};
             printf("[%s] my MAC --> ", __func__);
             for (int i = 0; i < sizeof(mac); i++)
             {
-				// 구현. addrData.mac 과 addr에 각각 mac[]의 값 할당
-
-				// hint. 아래는 출력문임 
+				/* 구현. addrData.mac 과 addr에 각각 mac[]의 값 할당 */ 
+                // 확인 필요
+                addrData.mac[i] = mac[i];
+				addr.mac[i]= mac[i];
+                /*----------------------------------------------*/
+				
+                // hint. 아래는 출력문임 
                 printf("%02X", addrData.mac[i]);
                 if (i != 5)
                     printf(":");
@@ -321,12 +329,14 @@ void L2_send(char *input, int length)
             
             data.length = length;
 			
-			// 구현. memset, cpy
-            memset(); 
-            memcpy();    
+			/*--- 구현. memset, cpy----*/
+            memset(addrData.type, 0x00, sizeof(addrData.type));
+           // type이 1일 때 reply이므로 1(=0x01)로 설정
+            memcpy(addrData.type, 0x01, 1); 
             
-            memset();
-            memcpy();     
+            memset(data.L2_data, 0x00, MAX_SIZE); // L2 struct의 L2_data 영역 초기화
+            memcpy(data.L2_data, &addrData, sizeof(addrData)); // addrData를 data.L2_data에 복사해서 넣어줌
+            /*-----------------------*/
 
             size = sizeof(struct L2) - sizeof(data.L2_data) + length;
 
@@ -398,10 +408,13 @@ char *L1_receive(int *length)
 		// 편의상 char 형태로  두개의 값을 비교
 		char str_ip[16]; // my ip
 		char str_daddr[16]; // receive ip
-		// 구현 . sprintf(??)
+		/* 구현 . sprintf(??)
+
 		sprintf();
 		sprintf();		
-		int result = strcmp(str_daddr, str_ip); // 검증
+		
+        */
+        int result = strcmp(str_daddr, str_ip); // 검증
 		if (result == 0) {
 			*length = *length - sizeof(data->daddr) - sizeof(data->length) - sizeof(data->saddr);
 	        return (char *)data->L1_data;
