@@ -165,7 +165,7 @@ void L1_send(char *input, int length)
             memset(temp, 0x00, 350);
             memcpy(temp, (void *)&data, size);
             L2_send(temp, size);
-			// Çü½Ä»ó ¸ÂÃçÁÜ
+			// í˜•ì‹ìƒ ë§ì¶°ì¤Œ
         }
         else
         {
@@ -190,9 +190,9 @@ void L1_send(char *input, int length)
             data.daddr[1] = 0x44;
             data.daddr[2] = 0x44;
             data.daddr[3] = 0x44;
-			// Çü½Ä»ó ¸ÂÃçÁÜ
+			// í˜•ì‹ìƒ ë§ì¶°ì¤Œ
 			/*
-				±¸Çö. IP ÁÖ¼Ò Çì´õ¿¡ ºÙÀÓ
+				êµ¬í˜„. IP ì£¼ì†Œ í—¤ë”ì— ë¶™ì„
 
 				
 			*/
@@ -206,7 +206,7 @@ void L1_send(char *input, int length)
 		{
 			//printf("%hhu", addr.ip[i]);
 			//if (i != 3) 	printf(".");
-			data.daddr[i] = addr.ip[i]; // µ¥ÀÌÅÍ °ª ´ëÀÔ [!]
+			data.daddr[i] = addr.ip[i]; // ë°ì´í„° ê°’ ëŒ€ì… [!]
 		}
 		//printf("\n"); 
 
@@ -223,7 +223,7 @@ void L1_send(char *input, int length)
         data.saddr[1] = 0x33;
         data.saddr[2] = 0x33;
         data.saddr[3] = 0x33;
-		// [!]µµÂøÁö ÁÖ¼Ò »ı·« °¡´É
+		// [!]ë„ì°©ì§€ ì£¼ì†Œ ìƒëµ ê°€ëŠ¥
 		/*
         data.daddr[0] = 0x44;
         data.daddr[1] = 0x44;
@@ -231,7 +231,7 @@ void L1_send(char *input, int length)
         data.daddr[3] = 0x44;
 		*/
 
-		// ³ª¸ÓÁö ÄÚµå´Â µ¿ÀÏÇÔ
+		// ë‚˜ë¨¸ì§€ ì½”ë“œëŠ” ë™ì¼í•¨
         data.length = length;
         memset(data.L1_data, 0x00, MAX_SIZE);
         strcpy(data.L1_data, input);
@@ -289,9 +289,9 @@ void L2_send(char *input, int length)
             printf("[%s] my MAC --> ", __func__);
             for (int i = 0; i < sizeof(mac); i++)
             {
-				// ±¸Çö. addrData.mac °ú addr¿¡ °¢°¢ mac[]ÀÇ °ª ÇÒ´ç
+				// êµ¬í˜„. addrData.mac ê³¼ addrì— ê°ê° mac[]ì˜ ê°’ í• ë‹¹
 
-				// hint. ¾Æ·¡´Â Ãâ·Â¹®ÀÓ 
+				// hint. ì•„ë˜ëŠ” ì¶œë ¥ë¬¸ì„ 
                 printf("%02X", addrData.mac[i]);
                 if (i != 5)
                     printf(":");
@@ -315,7 +315,7 @@ void L2_send(char *input, int length)
             
             data.length = length;
 			
-			// ±¸Çö. memset, cpy
+			// êµ¬í˜„. memset, cpy
             memset(); 
             memcpy();    
             
@@ -333,7 +333,7 @@ void L2_send(char *input, int length)
     {
 		for (int i = 0; i < sizeof(addr.mac); i++) 
 		{			
-			// ±¸Çö. µ¥ÀÌÅÍ °ª ´ëÀÔ
+			// êµ¬í˜„. ë°ì´í„° ê°’ ëŒ€ì…
 		}
 		
         data.saddr[0] = 0x11;
@@ -379,7 +379,7 @@ char *L1_receive(int *length)
         {
             // client
             addrData = (struct Addr *)data->L1_data; 
-            // ±¸Çö	addrData ¿¡ µ¥ÀÌÅÍ ÆÄ½ÌµÈ °ªµé Àü¿ª º¯¼ö¿¡ ÇÒ´ç Â¡Çà
+            // êµ¬í˜„	addrData ì— ë°ì´í„° íŒŒì‹±ëœ ê°’ë“¤ ì „ì—­ ë³€ìˆ˜ì— í• ë‹¹ ì§•í–‰
 
             *length = *length - sizeof(data->daddr) - sizeof(data->length) - sizeof(data->saddr);
             return (char *)data->L1_data;
@@ -389,13 +389,13 @@ char *L1_receive(int *length)
     {
         data = (struct L1 *)L2_receive(length);		
 		
-		// ÆíÀÇ»ó char ÇüÅÂ·Î  µÎ°³ÀÇ °ªÀ» ºñ±³
+		// í¸ì˜ìƒ char í˜•íƒœë¡œ  ë‘ê°œì˜ ê°’ì„ ë¹„êµ
 		char str_ip[16]; // my ip
 		char str_daddr[16]; // receive ip
-		// ±¸Çö . sprintf(??)
+		// êµ¬í˜„ . sprintf(??)
 		sprintf();
 		sprintf();		
-		int result = strcmp(str_daddr, str_ip); // °ËÁõ
+		int result = strcmp(str_daddr, str_ip); // ê²€ì¦
 		if (result == 0) {
 			*length = *length - sizeof(data->daddr) - sizeof(data->length) - sizeof(data->saddr);
 	        return (char *)data->L1_data;
@@ -421,7 +421,7 @@ char *L2_receive(int *length)
         else
         {
             // client
-            // ±¸Çö. µ¥ÀÌÅÍ ÆÄ½Ì°ú addr.mac¿¡ °ª ´ëÀÔ 
+            // êµ¬í˜„. ë°ì´í„° íŒŒì‹±ê³¼ addr.macì— ê°’ ëŒ€ì… 
 			// data =   *length =     addrData = 
 
 
@@ -435,7 +435,7 @@ char *L2_receive(int *length)
 		
 		char mac[18]; // my ip
 		char str_daddr[18]; // receive ip		
-		// ±¸Çö. L1_rev Âü°íÇÏ¿© ±¸Çö
+		// êµ¬í˜„. L1_rev ì°¸ê³ í•˜ì—¬ êµ¬í˜„
 
 		int result = strcmp(str_daddr, mac);
 		if(result==0){			
