@@ -146,7 +146,7 @@ void *do_thread(void *arg)
 
 void L1_send(char *input, int length)
 {
-    printf("[>] Enter L1_send()\n");
+    printf("[Debug] Enter L1_send()\n");
 
     struct L1 data;
     struct Addr addrData;
@@ -157,15 +157,15 @@ void L1_send(char *input, int length)
         if (is_server == 0)
         {
             // client 
-            data.saddr[0] = 0x00;
-            data.saddr[1] = 0x00;
-            data.saddr[2] = 0x00;
-            data.saddr[3] = 0x00;
+            data.saddr[0] = 0x09;
+            data.saddr[1] = 0x09;
+            data.saddr[2] = 0x09;
+            data.saddr[3] = 0x09;
 
-            data.daddr[0] = 0x00;
-            data.daddr[1] = 0x00;
-            data.daddr[2] = 0x00;
-            data.daddr[3] = 0x00;
+            data.daddr[0] = 0x09;
+            data.daddr[1] = 0x09;
+            data.daddr[2] = 0x09;
+            data.daddr[3] = 0x09;
 			
             data.length = length;
             memset(data.L1_data, 0x00, MAX_SIZE);
@@ -174,9 +174,25 @@ void L1_send(char *input, int length)
             size = sizeof(struct L1) - sizeof(data.L1_data) + length;
             memset(temp, 0x00, 350);
             memcpy(temp, (void *)&data, size);
-            
-            printf("[DEBUG] L1_send: data.saddr = "); for(int i=0; i<4; i++){ printf("%d", data.saddr[i]); if (i==3) printf("\n"); else  printf(", ");}
-            printf("[DEBUG] L1_send: data.daadr = "); for(int i=0; i<4; i++){printf("%d", data.daddr[i]); if (i==3) printf("\n");else  printf(", ");} 
+
+            printf("[DEBUG] L1_send: data.saddr = ");
+            for(int i=0; i<4; i++){
+                printf("%d ", data.saddr[i]);
+                if (i==3) printf("\n");
+            }
+            printf("[DEBUG] L1_send: data.daadr = ");
+            for(int i=0; i<4; i++){
+                printf("%d ", data.daddr[i]);
+                if (i==3) printf("\n");
+            }
+
+
+            // printf("[Debug] L1_send: data.saddr[0] = %d\n" , data.saddr[0]); printf("[Debug] L1_send: data.saddr[1] = %d\n" , data.saddr[1]);
+            // printf("[Debug] L1_send: data.saddr[2] = %d\n" , data.saddr[2]); printf("[Debug] L1_send: data.saddr[3] = %d\n" , data.saddr[3]);
+
+            // printf("[Debug] L1_send: data.daddr[0] = %d\n" , data.daddr[0]); printf("[Debug] L1_send: data.saddr[1] = %d\n" , data.daddr[1]);
+            // printf("[Debug] L1_send: data.daddr[2] = %d\n" , data.daddr[2]); printf("[Debug] L1_send: data.saddr[3] = %d\n" , data.daddr[3]);
+
             printf("\n");
 
             L2_send(temp, size);
@@ -186,7 +202,7 @@ void L1_send(char *input, int length)
         {
             // server
             printf("[%s] my IP --> ", __func__);
-            unsigned char ip[] = {192, 168, 64, 5}; // 서버 ip
+            unsigned char ip[] = {192, 168, 0, 1}; // 서버 ip
             for (int i = 0; i < sizeof(ip); i++)
             // addrData.ip에 server ip 값 할당
             {
@@ -197,34 +213,21 @@ void L1_send(char *input, int length)
                     printf(".");
             }
             printf("\n");
-            data.saddr[0] = 0x00;
-            data.saddr[1] = 0x00;
-            data.saddr[2] = 0x00;
-            data.saddr[3] = 0x00;
+            data.saddr[0] = 0x33;
+            data.saddr[1] = 0x33;
+            data.saddr[2] = 0x33;
+            data.saddr[3] = 0x33;
 
-            data.daddr[0] = 0x00;
-            data.daddr[1] = 0x00;
-            data.daddr[2] = 0x00;
-            data.daddr[3] = 0x00;
+            data.daddr[0] = 0x44;
+            data.daddr[1] = 0x44;
+            data.daddr[2] = 0x44;
+            data.daddr[3] = 0x44;
 			// 형식상 맞춰줌
 			
             /* 구현. IP 주소 헤더에 붙임 - 확인 필요 */
             memset(data.L1_data, 0x00, MAX_SIZE);
-            memcpy(data.L1_data, &addrData, sizeof(addrData));
-
-
-            printf("[%s] L1_send: addrData.ip = ", __func__); 
-            for(int i=0; i<4; i++){printf("%d", addrData.ip[i]); if (i==3) printf("\n"); else  printf(", ");}
-
-            struct Addr* payload = (struct Addr *) data.L1_data;
-
-            printf("[%s] L1_send: payload.ip = ", __func__); 
-            for(int i=0; i<4; i++){printf("%d", payload->ip[i]); if (i==3) printf("\n"); else  printf(", ");}
-
-            printf("[%s] L1_send: payload.mac = ", __func__); 
-            for(int i=0; i<6; i++){printf("%d", payload->mac[i]); if (i==5) printf("\n"); else  printf(", ");}
-            printf("\n");
-
+            memcpy(data.L1_data, (void *)&addrData, sizeof(addrData));
+            
             size = sizeof(struct L1) - sizeof(data.L1_data) + sizeof(addrData); // 확인 필요
             //size = sizeof(struct L1) - sizeof(data.L1_data) + length; 
             memset(temp, 0x00, 350);
@@ -232,7 +235,6 @@ void L1_send(char *input, int length)
             /*----------------------*/
 
             L2_send(temp, size);			 
-            
         }
     }
     else if (control.type == 1) // Not Find_Addr Mode[L1]
@@ -255,10 +257,10 @@ void L1_send(char *input, int length)
 		}
 		printf("\n"); 	
 	
-        data.saddr[0] = 0x00;
-        data.saddr[1] = 0x00;
-        data.saddr[2] = 0x00;
-        data.saddr[3] = 0x00;
+        data.saddr[0] = 0x33;
+        data.saddr[1] = 0x33;
+        data.saddr[2] = 0x33;
+        data.saddr[3] = 0x33;
 		// [!]도착지 주소 생략 가능
 		/*
         data.daddr[0] = 0x44;
@@ -281,7 +283,7 @@ void L1_send(char *input, int length)
 
 void L2_send(char *input, int length)
 {
-    printf("[>] Enter L2_send()\n");
+    printf("[Debug] Enter L2_send()\n");
     struct L2 data;
     struct Addr addrData;
 
@@ -291,8 +293,19 @@ void L2_send(char *input, int length)
     {
         if (is_server == 0) // client
         {
-            // 0으로 초기화
-            for(int i=0; i<6; i++){ data.saddr[i] = 0x00; data.daddr[i] = 0x00; }
+            data.saddr[0] = 0x11;
+            data.saddr[1] = 0x12;
+            data.saddr[2] = 0x13;
+            data.saddr[3] = 0x14;
+            data.saddr[4] = 0x15;
+            data.saddr[5] = 0x16;
+
+            data.daddr[0] = 0x21;
+            data.daddr[1] = 0x22;
+            data.daddr[2] = 0x23;
+            data.daddr[3] = 0x24;
+            data.daddr[4] = 0x25;
+            data.daddr[5] = 0x26;
 
             data.length = length;
             memset(data.L2_data, 0x00, MAX_SIZE);
@@ -303,21 +316,14 @@ void L2_send(char *input, int length)
             memset(temp, 0x00, 350);
             memcpy(temp, (void *)&data, size);
             
-            printf("[DEBUG] L2_send: data.saddr = ");
-            for(int i=0; i<6; i++){
-                printf("%d", data.saddr[i]);
-                if (i==5) printf("\n"); 
-                else  printf(", ");
-            }
-            printf("[DEBUG] L2_send: data.daadr = ");
-            for(int i=0; i<6; i++){
-                printf("%d", data.daddr[i]);
-                if (i==5) printf("\n"); 
-                else  printf(", ");
-            }
+            printf("[Debug] L2_send: data.saddr[0] = %d\n" , data.saddr[0]); printf("[Debug] L2_send: data.saddr[1] = %d\n" , data.saddr[1]);
+            printf("[Debug] L2_send: data.saddr[2] = %d\n" , data.saddr[2]); printf("[Debug] L2_send: data.saddr[3] = %d\n" , data.saddr[3]);
+            printf("[Debug] L2_send: data.saddr[4] = %d\n" , data.saddr[4]); printf("[Debug] L2_send: data.saddr[5] = %d\n" , data.saddr[5]);
 
+            printf("[Debug] L2_send: data.daddr[0] = %d\n" , data.daddr[0]); printf("[Debug] L1_send: data.saddr[1] = %d\n" , data.daddr[1]);
+            printf("[Debug] L2_send: data.daddr[2] = %d\n" , data.daddr[2]); printf("[Debug] L1_send: data.saddr[3] = %d\n" , data.daddr[3]);
+            printf("[Debug] L2_send: data.daddr[4] = %d\n" , data.daddr[4]); printf("[Debug] L1_send: data.saddr[5] = %d\n" , data.daddr[5]);
             printf("\n");
-            
             L3_send(temp, size);
         }
         else
@@ -330,7 +336,7 @@ void L2_send(char *input, int length)
             // tempAddr(L1_data.ip의 시작주소)부터 addrData.ip의 size 만큼 addrData.ip로 복사
             memcpy(addrData.ip, tempAddr->ip, sizeof(addrData.ip)); 
 
-            unsigned char mac[] = {0x02, 0x02, 0x02, 0x02, 0x02, 0x02};
+            unsigned char mac[] = {0x00, 0x10, 0x00, 0x0A, 0x00, 0x00};
             printf("[%s] my MAC --> ", __func__);
             for (int i = 0; i < sizeof(mac); i++)
             {
@@ -346,33 +352,32 @@ void L2_send(char *input, int length)
                     printf(":");
             }
             printf("\n");
+			
+            data.saddr[0] = 0x11;
+            data.saddr[1] = 0x12;
+            data.saddr[2] = 0x13;
+            data.saddr[3] = 0x14;
+            data.saddr[4] = 0x15;
+            data.saddr[5] = 0x16;
 
-            // addr값 0x00으로 초기화
-			for(int i=0; i<6; i++) {
-                data.saddr[i]= 0x00;
-                data.daddr[i]= 0x00;
-            }
-    
+            data.daddr[0] = 0x21;
+            data.daddr[1] = 0x22;
+            data.daddr[2] = 0x23;
+            data.daddr[3] = 0x24;
+            data.daddr[4] = 0x25;
+            data.daddr[5] = 0x26;
+
             
             data.length = length;
 			
-			/*--- 구현. memset, cpy----*/ // 이부분 segmentation fault 발생함
-            //memset(addrData.type, 0x00, sizeof(addrData.type));
+			/*--- 구현. memset, cpy----*/
+            memset(addrData.type, 0x00, sizeof(addrData.type));
            // type이 1일 때 reply이므로 1(=0x01)로 설정
-            //memcpy(addrData.type, 0x01, 1); 
+            memcpy(addrData.type, 0x01, 1); 
             
             memset(data.L2_data, 0x00, MAX_SIZE); // L2 struct의 L2_data 영역 초기화
             memcpy(data.L2_data, &addrData, sizeof(addrData)); // addrData를 data.L2_data에 복사해서 넣어줌
             /*-----------------------*/
-            
-            struct Addr* payload = (struct Addr*)data.L2_data;
-            
-            printf("[%s] L2_send: payload.ip = ", __func__); 
-            for(int i=0; i<4; i++){printf("%d", payload->ip[i]); if (i==3) printf("\n"); else  printf(", ");}
-
-            printf("[%s] L2_send: payload.mac = ", __func__); 
-            for(int i=0; i<6; i++){printf("%d", payload->mac[i]); if (i==5) printf("\n"); else  printf(", ");}
-            printf("\n");
 
             size = sizeof(struct L2) - sizeof(data.L2_data) + length;
 
@@ -389,8 +394,13 @@ void L2_send(char *input, int length)
 			// 구현. 데이터 값 대입
 		}
 		
-        for (int i=0; i< sizeof(data.saddr); i++) {data.saddr[i] = 0x00;}
-   
+        data.saddr[0] = 0x11;
+        data.saddr[1] = 0x12;
+        data.saddr[2] = 0x13;
+        data.saddr[3] = 0x14;
+        data.saddr[4] = 0x15;
+        data.saddr[5] = 0x16;
+		
         data.length = length;
         memset(data.L2_data, 0x00, MAX_SIZE);
         memcpy(data.L2_data, (void *)input, length);
@@ -405,17 +415,16 @@ void L2_send(char *input, int length)
 
 void L3_send(char *data, int length)
 {
-    printf("[>] Enter L3_send()\n");
+    printf("[Debug] Enter L3_send()\n");
 
     sendto(sndsock, data, length, 0, (struct sockaddr *)&s_addr, sizeof(s_addr));
-    printf("[@] Send with Socket, length: %d\n", length);
-    printf("\n");
+    printf("[Debug] Send with Socket, length: %d\n", length);
 
 }
 
 char *L1_receive(int *length)
 {
-    printf("[>] Enter L1_receive()\n");
+    printf("[Debug] Enter L1_receive()\n");
 
     struct L1 *data;
     struct Addr *addrData;
@@ -465,7 +474,7 @@ char *L1_receive(int *length)
 
 char *L2_receive(int *length)
 {
-    printf("[>] Enter L2_receive()\n");
+    printf("[Debug] Enter L2_receive()\n");
 
     struct L2 *data;
     struct Addr *addrData;
@@ -473,7 +482,7 @@ char *L2_receive(int *length)
     {
         if (is_server == 1)
         {
-            printf("[>] L2_receive: server part\n");
+            printf("[Debug] L2_receive: server part\n");
             // server
             data = (struct L2 *)L3_receive(length);
             *length = *length - sizeof(data->daddr) - sizeof(data->length) - sizeof(data->saddr);
@@ -482,36 +491,16 @@ char *L2_receive(int *length)
         else
 
         {
-            printf("[>] L2_receive: client part\n");
+            printf("[Debug] L2_receive: client part\n");
+            printf("[Debug] L2_receive: hello world\n");
+
             // client
             // 구현. 데이터 파싱과 addr.mac에 값 대입 
 			// data =   *length =     addrData = 
             /*----------------------------------*/
             data = (struct L2 *)L3_receive(length);
-            struct Addr* payload = (struct Addr*) data->L2_data;
-
-            printf("[%s] L2_receive: payload.ip = ", __func__);
-            for(int i=0; i<4; i++){
-                printf("%d", payload->ip[i]);
-                if (i==3) printf("\n"); 
-                else  printf(", ");
-            }
-
-        printf("[%s] L2_receive: payload.mac = ", __func__);
-            for(int i=0; i<6; i++){
-                printf("%d", payload->mac[0]);
-                if (i==5) printf("\n"); 
-                else  printf(", ");
-            }
-
-        
-            //printf("[Debug] L2_receive: data.saddr[0] = %d", data->saddr[0]);
-            printf("[%s] L2_receive: data.saadr = ", __func__);
-            for(int i=0; i<6; i++){
-                printf("%d", data->saddr[i]);
-                if (i==5) printf("\n"); 
-                else  printf(", ");
-            }
+            
+            printf("[Debug] L2_receive: data.saddr[0] = %d", data->saddr[0]);
             *length = *length - sizeof(data->daddr) - sizeof(data->length) - sizeof(data->saddr);
             /*----------------------------------*/
 
@@ -539,10 +528,10 @@ char *L2_receive(int *length)
 
 char *L3_receive(int *length)
 {   
-    printf("[>] Enter L3_receive()\n");
+    printf("[Debug] Enter L3_receive()\n");
     static char data[MAX_SIZE];
     *length = recvfrom(rcvsock, data, MAX_SIZE, 0, (struct sockaddr *)&r_addr, &clen);
-    printf("[@] Receive from Socket\n");
+    printf("[Debug] Receive from Socket\n");
     return data;
 }
 
@@ -569,7 +558,7 @@ void check_is_server(char *const *argv)
     //if(process_count == 0) is_server = 1; else is_server = 0;
 	is_server = process_count == 1;
 	//printf("[!] process_count: %d\n", process_count);
-	printf("[i] check_is_server: is_server: %d\n", is_server);
+	printf("[Debug] check_is_server: is_server: %d\n", is_server);
 
 }
 void init_socket()
