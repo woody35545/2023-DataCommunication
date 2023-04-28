@@ -242,8 +242,13 @@ void L1_send(char *input, int length)
 		{
 			printf("%hhu", addr.ip[i]);
 			if (i != 3) 	printf(".");
-			data.daddr[i] = addr.ip[i]; // 데이터 값 대입 [!]
-		}
+		
+            data.daddr[i] = addr.ip[i]; // 데이터 값 대입 [!]
+		
+        }
+        printf("\n");
+        for(int i=0; i<sizeof(addr.ip); i++) printf("[%s] data.daddr[%d] := addr.ip[%d] // %d\n" ,__func__, i, i, addr.ip[i]);
+
 		printf("\n"); 
 
 		printf("[%s] daddr(IP) setting FINISH --> ", __func__); 
@@ -387,8 +392,11 @@ void L2_send(char *input, int length)
 		for (int i = 0; i < sizeof(addr.mac); i++) 
 		{			
 			// 구현. 데이터 값 대입
-		}
-		
+            data.saddr[i] = addr.mac[i];
+		    printf("[%s] data.daddr[%d] := addr.mac[%d] // %d\n" , __func__,i,i,addr.mac[i]);
+        }
+        
+
         for (int i=0; i< sizeof(data.saddr); i++) {data.saddr[i] = 0x00;}
    
         data.length = length;
@@ -431,10 +439,26 @@ char *L1_receive(int *length)
             return (char *)data->L1_data;
         }
         else if (is_server == 0)
-        {
-            // client
-            addrData = (struct Addr *)data->L1_data; 
+        { // client
+            //addrData = (struct Addr *)data->L1_data; 
+
+            //data  = (struct L1 *) L2_receive(length);
+            addrData = (struct Addr *) data;
             // 구현	addrData 에 데이터 파싱된 값들 전역 변수에 할당 징행
+            
+            // 값이 제대로 들어오는지 확인 - 제대로 안들어옴
+            printf("[i] ip값 제대로 들어오는지 확인\n");
+            for(int i=0; i<sizeof(addrData->ip); i++) printf("[%s] addrData.ip[%d] = %d\n" ,__func__,i, addrData->ip[i]);
+            printf("\n");
+
+            /*-----------*/
+            printf("[i] addr.ip에 값 할당\n");
+            for(int i=0; i<sizeof(addrData->ip); i++){
+                addr.ip[i] = addrData->ip[i];
+                printf("[%s] addr.ip[%d] := %d\n", __func__, i, addrData->ip[i]);
+            } // 확인 필요 - 제대로 작동 안함
+            printf("\n");
+            /*-----------*/
 
             *length = *length - sizeof(data->daddr) - sizeof(data->length) - sizeof(data->saddr);
             return (char *)data->L1_data;
@@ -480,15 +504,21 @@ char *L2_receive(int *length)
             return (char *)data->L2_data;
         }
         else
-
         {
+            // client
+            
             printf("[>] L2_receive: client part\n");
             // client
             // 구현. 데이터 파싱과 addr.mac에 값 대입 
 			// data =   *length =     addrData = 
             /*----------------------------------*/
             data = (struct L2 *)L3_receive(length);
+
             struct Addr* payload = (struct Addr*) data->L2_data;
+
+
+            // L2 payload 에 값이 제대로 담겨오는지 확인 - 확인 완료
+            printf("[i] L2 payload 에 값이 제대로 담겨오는지 확인\n");
 
             printf("[%s] L2_receive: payload.ip = ", __func__);
             for(int i=0; i<4; i++){
@@ -497,22 +527,22 @@ char *L2_receive(int *length)
                 else  printf(", ");
             }
 
-        printf("[%s] L2_receive: payload.mac = ", __func__);
-            for(int i=0; i<6; i++){
-                printf("%d", payload->mac[0]);
-                if (i==5) printf("\n"); 
-                else  printf(", ");
+            printf("[%s] L2_receive: payload.mac = ", __func__); 
+            for(int i=0; i<6; i++){ printf("%d", payload->mac[0]); if (i==5) printf("\n"); else  printf(", ");}
+
+            // printf("[%s] L2_receive: data.saadr = ", __func__);
+            // for(int i=0; i<6; i++){ printf("%d", data->saddr[i]); if (i==5) printf("\n"); else  printf(", ");}
+            *length = *length - sizeof(data->daddr) - sizeof(data->length) - sizeof(data->saddr);
+
+            printf("\n");
+            // 전역변수 addr.mac에 받은 mac값 할당
+            printf("[i] 전역변수 addr.mac에 받은 mac값 할당\n");
+
+            for(int i=0; i<sizeof(payload->mac); i++){
+                addr.mac[i] = payload->mac[i];
+                printf("[%s] addr.mac[%d] := %d\n", __func__, i, payload->mac[i]);
             }
 
-        
-            //printf("[Debug] L2_receive: data.saddr[0] = %d", data->saddr[0]);
-            printf("[%s] L2_receive: data.saadr = ", __func__);
-            for(int i=0; i<6; i++){
-                printf("%d", data->saddr[i]);
-                if (i==5) printf("\n"); 
-                else  printf(", ");
-            }
-            *length = *length - sizeof(data->daddr) - sizeof(data->length) - sizeof(data->saddr);
             /*----------------------------------*/
 
             return (char *)data->L2_data;
