@@ -173,6 +173,8 @@ void L1_send(char *input, int length)
             printf("[%s] my IP --> ", __func__);
             unsigned char ip[] = {192, 168, 0, 1};
             for (int i = 0; i < sizeof(ip); i++)
+            
+            // addrData.ip 값 할당
             {
                 addrData.ip[i] = ip[i];
 				addr.ip[i]= ip[i];
@@ -191,11 +193,12 @@ void L1_send(char *input, int length)
             data.daddr[2] = 0x44;
             data.daddr[3] = 0x44;
 			// 형식상 맞춰줌
-			/*
-				구현. IP 주소 헤더에 붙임
+			
+            /* 구현. IP 주소 헤더에 붙임 */
+            memset(temp, 0x00, 350);
 
-				
-			*/
+
+            /*----------------------*/
             L2_send(temp, size);			 
         }
     }
