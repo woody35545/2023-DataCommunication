@@ -95,8 +95,11 @@ void initAdress()
     if (is_server == 0)
     {
         // client
+        printf("[initAddress] - client\n");
+
         printf("\033[0;31m[Find Adress Mode - Request ...]\n\033[0m");
         addr.type = 0;
+        printf("[Debug] initAddress: before L1_send\n");
         L1_send("", strlen(""));
 
         strcpy(output, L1_receive(&length));
@@ -107,8 +110,13 @@ void initAdress()
     else
     {
         // server
+        printf("[initAddress] - server\n");
+        printf("[Debug] initAddress: before strcpy\n");
+
         strcpy(output, L1_receive(&length));
+        printf("[Debug] length = %d\n", length);
         output[length] = '\0';
+        printf("server L1_Send\n");
         L1_send("", strlen(""));
 
         //printf("[Find Adress Mode - Success ...]\n");
@@ -138,6 +146,8 @@ void *do_thread(void *arg)
 
 void L1_send(char *input, int length)
 {
+    printf("[Debug] Enter L1_send()\n");
+
     struct L1 data;
     struct Addr addrData;
 	char temp[350];
@@ -147,15 +157,15 @@ void L1_send(char *input, int length)
         if (is_server == 0)
         {
             // client 
-            data.saddr[0] = 0x33;
-            data.saddr[1] = 0x33;
-            data.saddr[2] = 0x33;
-            data.saddr[3] = 0x33;
+            data.saddr[0] = 0x09;
+            data.saddr[1] = 0x09;
+            data.saddr[2] = 0x09;
+            data.saddr[3] = 0x09;
 
-            data.daddr[0] = 0x44;
-            data.daddr[1] = 0x44;
-            data.daddr[2] = 0x44;
-            data.daddr[3] = 0x44;
+            data.daddr[0] = 0x09;
+            data.daddr[1] = 0x09;
+            data.daddr[2] = 0x09;
+            data.daddr[3] = 0x09;
 			
             data.length = length;
             memset(data.L1_data, 0x00, MAX_SIZE);
@@ -164,6 +174,14 @@ void L1_send(char *input, int length)
             size = sizeof(struct L1) - sizeof(data.L1_data) + length;
             memset(temp, 0x00, 350);
             memcpy(temp, (void *)&data, size);
+            printf("[Debug] L1_send: data.saddr[0] = %d\n" , data.saddr[0]); printf("[Debug] L1_send: data.saddr[1] = %d\n" , data.saddr[1]);
+            printf("[Debug] L1_send: data.saddr[2] = %d\n" , data.saddr[2]); printf("[Debug] L1_send: data.saddr[3] = %d\n" , data.saddr[3]);
+
+            printf("[Debug] L1_send: data.daddr[0] = %d\n" , data.daddr[0]); printf("[Debug] L1_send: data.saddr[1] = %d\n" , data.daddr[1]);
+            printf("[Debug] L1_send: data.daddr[2] = %d\n" , data.daddr[2]); printf("[Debug] L1_send: data.saddr[3] = %d\n" , data.daddr[3]);
+
+            printf("\n");
+
             L2_send(temp, size);
 			// 형식상 맞춰줌
         }
@@ -211,13 +229,13 @@ void L1_send(char *input, int length)
 		
 		for (int i = 0; i < sizeof(addr.ip); i++) 
 		{
-			//printf("%hhu", addr.ip[i]);
-			//if (i != 3) 	printf(".");
+			printf("%hhu", addr.ip[i]);
+			if (i != 3) 	printf(".");
 			data.daddr[i] = addr.ip[i]; // 데이터 값 대입 [!]
 		}
-		//printf("\n"); 
+		printf("\n"); 
 
-		/*printf("[%s] daddr(IP) setting FINISH --> ", __func__); 
+		printf("[%s] daddr(IP) setting FINISH --> ", __func__); 
 		for (int i = 0; i < sizeof(addr.ip); i++) 
 		{
 			printf("%hhu", data.daddr[i]);
@@ -225,7 +243,7 @@ void L1_send(char *input, int length)
 				printf(".");			
 		}
 		printf("\n"); 	
-		*/
+	
         data.saddr[0] = 0x33;
         data.saddr[1] = 0x33;
         data.saddr[2] = 0x33;
@@ -252,6 +270,7 @@ void L1_send(char *input, int length)
 
 void L2_send(char *input, int length)
 {
+    printf("[Debug] Enter L2_send()\n");
     struct L2 data;
     struct Addr addrData;
 
@@ -259,7 +278,7 @@ void L2_send(char *input, int length)
     int size = 0;
     if (control.type == 2)
     {
-        if (is_server == 0)
+        if (is_server == 0) // client
         {
             data.saddr[0] = 0x11;
             data.saddr[1] = 0x12;
@@ -283,6 +302,15 @@ void L2_send(char *input, int length)
 
             memset(temp, 0x00, 350);
             memcpy(temp, (void *)&data, size);
+            
+            printf("[Debug] L2_send: data.saddr[0] = %d\n" , data.saddr[0]); printf("[Debug] L2_send: data.saddr[1] = %d\n" , data.saddr[1]);
+            printf("[Debug] L2_send: data.saddr[2] = %d\n" , data.saddr[2]); printf("[Debug] L2_send: data.saddr[3] = %d\n" , data.saddr[3]);
+            printf("[Debug] L2_send: data.saddr[4] = %d\n" , data.saddr[4]); printf("[Debug] L2_send: data.saddr[5] = %d\n" , data.saddr[5]);
+
+            printf("[Debug] L2_send: data.daddr[0] = %d\n" , data.daddr[0]); printf("[Debug] L1_send: data.saddr[1] = %d\n" , data.daddr[1]);
+            printf("[Debug] L2_send: data.daddr[2] = %d\n" , data.daddr[2]); printf("[Debug] L1_send: data.saddr[3] = %d\n" , data.daddr[3]);
+            printf("[Debug] L2_send: data.daddr[4] = %d\n" , data.daddr[4]); printf("[Debug] L1_send: data.saddr[5] = %d\n" , data.daddr[5]);
+            printf("\n");
             L3_send(temp, size);
         }
         else
@@ -342,6 +370,7 @@ void L2_send(char *input, int length)
 
             memset(temp, 0x00, 350);
             memcpy(temp, (void *)&data, size);
+
             L3_send(temp, size);
         }
     }
@@ -373,11 +402,17 @@ void L2_send(char *input, int length)
 
 void L3_send(char *data, int length)
 {
+    printf("[Debug] Enter L3_send()\n");
+
     sendto(sndsock, data, length, 0, (struct sockaddr *)&s_addr, sizeof(s_addr));
+    printf("[Debug] Send with Socket, length: %d\n", length);
+
 }
 
 char *L1_receive(int *length)
 {
+    printf("[Debug] Enter L1_receive()\n");
+
     struct L1 *data;
     struct Addr *addrData;
 	
@@ -426,23 +461,35 @@ char *L1_receive(int *length)
 
 char *L2_receive(int *length)
 {
+    printf("[Debug] Enter L2_receive()\n");
+
     struct L2 *data;
     struct Addr *addrData;
     if (control.type == 2)
     {
         if (is_server == 1)
         {
+            printf("[Debug] L2_receive: server part\n");
             // server
             data = (struct L2 *)L3_receive(length);
             *length = *length - sizeof(data->daddr) - sizeof(data->length) - sizeof(data->saddr);
             return (char *)data->L2_data;
         }
         else
+
         {
+            printf("[Debug] L2_receive: client part\n");
+            printf("[Debug] L2_receive: hello world\n");
+
             // client
             // 구현. 데이터 파싱과 addr.mac에 값 대입 
 			// data =   *length =     addrData = 
-
+            /*----------------------------------*/
+            data = (struct L2 *)L3_receive(length);
+            
+            printf("[Debug] L2_receive: data.saddr[0] = %d", data->saddr[0]);
+            *length = *length - sizeof(data->daddr) - sizeof(data->length) - sizeof(data->saddr);
+            /*----------------------------------*/
 
             return (char *)data->L2_data;
         }
@@ -467,9 +514,11 @@ char *L2_receive(int *length)
 }
 
 char *L3_receive(int *length)
-{
+{   
+    printf("[Debug] Enter L3_receive()\n");
     static char data[MAX_SIZE];
     *length = recvfrom(rcvsock, data, MAX_SIZE, 0, (struct sockaddr *)&r_addr, &clen);
+    printf("[Debug] Receive from Socket\n");
     return data;
 }
 
@@ -496,7 +545,7 @@ void check_is_server(char *const *argv)
     if(process_count == 0) is_server = 1; else is_server = 0;
 	//is_server = process_count == 1;
 	//printf("[!] process_count: %d\n", process_count);
-	//printf("[!] is_server: %d\n", is_server);
+	printf("[Debug] check_is_server: is_server: %d\n", is_server);
 
 }
 void init_socket()
