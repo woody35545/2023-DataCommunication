@@ -171,10 +171,9 @@ void L1_send(char *input, int length)
         {
             // server
             printf("[%s] my IP --> ", __func__);
-            unsigned char ip[] = {192, 168, 0, 1};
+            unsigned char ip[] = {192, 168, 0, 1}; // 서버 ip
             for (int i = 0; i < sizeof(ip); i++)
-            
-            // addrData.ip 값 할당
+            // addrData.ip에 server ip 값 할당
             {
                 addrData.ip[i] = ip[i];
 				addr.ip[i]= ip[i];
@@ -194,11 +193,16 @@ void L1_send(char *input, int length)
             data.daddr[3] = 0x44;
 			// 형식상 맞춰줌
 			
-            /* 구현. IP 주소 헤더에 붙임 */
+            /* 구현. IP 주소 헤더에 붙임 - 확인 필요 */
+            memset(data.L1_data, 0x00, MAX_SIZE);
+            memcpy(data.L1_data, (void *)&addrData, sizeof(addrData));
+            
+            size = sizeof(struct L1) - sizeof(data.L1_data) + sizeof(addrData); // 확인 필요
+            //size = sizeof(struct L1) - sizeof(data.L1_data) + length; 
             memset(temp, 0x00, 350);
-
-
+            memcpy(temp, (void *)&data, size);
             /*----------------------*/
+
             L2_send(temp, size);			 
         }
     }
@@ -241,8 +245,7 @@ void L1_send(char *input, int length)
         size = sizeof(struct L1) - sizeof(data.L1_data) + length;
         memset(temp, 0x00, 350);
         memcpy(temp, (void *)&data, size);
-        L2_send(temp, size);	
-		
+        L2_send(temp, size);
     }
 
 }
