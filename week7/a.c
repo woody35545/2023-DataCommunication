@@ -13,7 +13,7 @@
 #include <string.h>
 #define MAX_SIZE 300
 #define IP_ADDRESS "127.0.0.1"
-
+#define MAC_ADDRESS "76:04:a0:7e:8f:a1"
 
 struct L1
 {
@@ -247,7 +247,14 @@ void L1_send(char *input, int length)
 		
         }
         printf("\n");
-        for(int i=0; i<sizeof(addr.ip); i++) printf("[%s] data.daddr[%d] := addr.ip[%d] // %d\n" ,__func__, i, i, addr.ip[i]);
+
+        for(int i=0; i<4; i++) 
+        {
+            //printf("[%s] data.daddr[%d] := addr.ip[%d] // %d\n" ,__func__, i, i, addr.ip[i]);
+            printf("[%s] data.daddr[%d] := addr.ip[%d] // %d\n" ,__func__, i, i, data.daddr[i]);
+        
+        } 
+
 
 		printf("\n"); 
 
@@ -279,6 +286,13 @@ void L1_send(char *input, int length)
         size = sizeof(struct L1) - sizeof(data.L1_data) + length;
         memset(temp, 0x00, 350);
         memcpy(temp, (void *)&data, size);
+        printf("[%s] sizeof(struct L1): %d\n", __func__,sizeof(struct L1));
+        printf("[%s] sizeof(L1.saddr): %d\n", __func__,sizeof(data.saddr));
+        printf("[%s] sizeof(L1.daddr): %d\n", __func__,sizeof(data.daddr));
+        printf("[%s] sizeof(L1.length): %d\n", __func__,sizeof(data.length));
+        printf("[%s] sizeof(L1.L1_data): %d\n", __func__,sizeof(data.L1_data));
+        printf("[%s] length: %d\n", __func__,length);
+        printf("[%s] L1_Send size: %d\n", __func__,size);
         L2_send(temp, size);
     }
 
@@ -294,7 +308,7 @@ void L2_send(char *input, int length)
     int size = 0;
     if (control.type == 2)
     {
-        if (is_server == 0) // client
+        if (is_server == 0) // client, request address to server
         {
             // 0으로 초기화
             for(int i=0; i<6; i++){ data.saddr[i] = 0x00; data.daddr[i] = 0x00; }
@@ -335,9 +349,11 @@ void L2_send(char *input, int length)
             // tempAddr(L1_data.ip의 시작주소)부터 addrData.ip의 size 만큼 addrData.ip로 복사
             memcpy(addrData.ip, tempAddr->ip, sizeof(addrData.ip)); 
 
-            unsigned char mac[] = {0x02, 0x02, 0x02, 0x02, 0x02, 0x02};
+            //76:04:a0:7e:8f:a1
+            /*test*/
+            unsigned char mac[] = {0x76, 0x04, 0xa0, 0x7e, 0x8f, 0xa1};
             printf("[%s] my MAC --> ", __func__);
-            for (int i = 0; i < sizeof(mac); i++)
+            for (int i = 0; i < 6; i++)
             {
 				/* 구현. addrData.mac 과 addr에 각각 mac[]의 값 할당 */ 
                 // 확인 필요
@@ -389,16 +405,17 @@ void L2_send(char *input, int length)
     }
     else if (control.type == 1)
     {
-		for (int i = 0; i < sizeof(addr.mac); i++) 
+	
+        for (int i=0; i< 6; i++) {data.daddr[i] = 0x00;}
+   
+    	for (int i = 0; i < 6; i++) 
 		{			
 			// 구현. 데이터 값 대입
-            data.saddr[i] = addr.mac[i];
-		    printf("[%s] data.daddr[%d] := addr.mac[%d] // %d\n" , __func__,i,i,addr.mac[i]);
+            data.daddr[i] = addr.mac[i];
+		    printf("[%s] data.daddr[%d] := addr.mac[%d] // %d\n" , __func__,i,i,data.daddr[i]);
         }
         
-
-        for (int i=0; i< sizeof(data.saddr); i++) {data.saddr[i] = 0x00;}
-   
+    
         data.length = length;
         memset(data.L2_data, 0x00, MAX_SIZE);
         memcpy(data.L2_data, (void *)input, length);
@@ -441,8 +458,7 @@ char *L1_receive(int *length)
         else if (is_server == 0)
         { // client
             //addrData = (struct Addr *)data->L1_data; 
-
-            //data  = (struct L1 *) L2_receive(length);
+            //data  = (struct L1 *) L2_receive(length); -> 위에 이미 선언되어 있어서 다시 호출하면 안됨.
             addrData = (struct Addr *) data;
             // 구현	addrData 에 데이터 파싱된 값들 전역 변수에 할당 징행
             
@@ -455,7 +471,9 @@ char *L1_receive(int *length)
             printf("[i] addr.ip에 값 할당\n");
             for(int i=0; i<sizeof(addrData->ip); i++){
                 addr.ip[i] = addrData->ip[i];
-                printf("[%s] addr.ip[%d] := %d\n", __func__, i, addrData->ip[i]);
+                //printf("[%s] addr.ip[%d] := %d\n", __func__, i, addrData->ip[i]);
+                printf("[%s] addr.ip[%d] := %d\n", __func__, i, addr.ip[i]);
+
             } // 확인 필요 - 제대로 작동 안함
             printf("\n");
             /*-----------*/
@@ -468,17 +486,46 @@ char *L1_receive(int *length)
     {
         data = (struct L1 *)L2_receive(length);		
 		
+        // receive한 패킷의 destination ip 확인
+        printf("[%s] received packet의 dst ip address\n" , __func__);
+        for(int i=0; i<4; i++) printf("L1_received.daddr[%d] %d\n", i, data->daddr[i]);
+        printf("\n");
+
 		// 편의상 char 형태로  두개의 값을 비교
-		char str_ip[16]; // my ip
-		char str_daddr[16]; // receive ip
+		
+        //char str_ip[16];// my ip
+		int my_ip[4] = {192,168,64,5};
+        char str_ip[16];
+        int cur =0;
+        for(int i =0; i<4; i++) {
+            if(i==3) cur += sprintf(str_ip+cur, "%d" ,my_ip[i]);
+            else cur += sprintf(str_ip+cur, "%d." ,my_ip[i]);
+        }
+
+        char str_daddr[16]; // receive ip
+        
+        // data->daddr을 integer 형태로 읽어서 str_daddr 배열에 저장
+        cur = 0;
+        for(int i =0; i<4; i++) {
+            if(i==3) cur += sprintf(str_daddr+cur, "%d" ,data->daddr[i]);
+            else cur += sprintf(str_daddr+cur, "%d." ,data->daddr[i]);
+        }
+        printf("my ip: %s\n", str_ip);
+
+        printf("str_daddr: %s\n", str_daddr);
+
 		/* 구현 . sprintf(??)
+        
 
 		sprintf();
 		sprintf();		
 		
         */
+
         int result = strcmp(str_daddr, str_ip); // 검증
 		if (result == 0) {
+            printf("IP Equal\n");	
+
 			*length = *length - sizeof(data->daddr) - sizeof(data->length) - sizeof(data->saddr);
 	        return (char *)data->L1_data;
 		} else {
@@ -538,11 +585,12 @@ char *L2_receive(int *length)
             // 전역변수 addr.mac에 받은 mac값 할당
             printf("[i] 전역변수 addr.mac에 받은 mac값 할당\n");
 
-            for(int i=0; i<sizeof(payload->mac); i++){
+            for(int i=0; i<6; i++){
                 addr.mac[i] = payload->mac[i];
-                printf("[%s] addr.mac[%d] := %d\n", __func__, i, payload->mac[i]);
+                //printf("[%s] addr.mac[%d] := %d\n", __func__, i, payload->mac[i]);
+                printf("[%s] addr.mac[%d] := %d\n", __func__, i, addr.mac[i]);
             }
-
+           
             /*----------------------------------*/
 
             return (char *)data->L2_data;
@@ -552,18 +600,37 @@ char *L2_receive(int *length)
     {
 
         data = (struct L2 *)L3_receive(length);
-		
-		char mac[18]; // my ip
-		char str_daddr[18]; // receive ip		
-		// 구현. L1_rev 참고하여 구현
+	    printf("[%s] received packet의 dst mac address\n" , __func__);
+        //printf("[%s] siezof(data->daddr) = %d ",__func__, sizeof(data->daddr)); 
+        
+        for(int i=0; i<6; i++) printf("L2_received.daddr[%d] %d\n", i, data->daddr[i]);
+        
+        *length = *length - sizeof(data->daddr) - sizeof(data->length) - sizeof(data->saddr);
 
+		char mac[18] = MAC_ADDRESS; // my mac
+		char str_daddr[18]; // receive mac
+         // data->daddr을 integer 형태로 읽어서 str_daddr 배열에 저장
+        int cur = 0;
+        for(int i =0; i<6; i++) {
+            if(i==5) cur += sprintf(str_daddr+cur, "%02x" ,data->daddr[i]);
+            else cur += sprintf(str_daddr+cur, "%02x:" ,data->daddr[i]);
+        }
+        
+        printf("my mac: %s\n", mac);
+        printf("str_daddr: %s\n", str_daddr);
+        // 구현. L1_rev 참고하여 구현
+        
+        //구현완료 전까지 임시로 주석처리
 		int result = strcmp(str_daddr, mac);
 		if(result==0){			
+            printf("Mac Equal\n");	
 			*length = *length - sizeof(data->daddr) - sizeof(data->length) - sizeof(data->saddr);
 	        return (char *)data->L2_data;
 		}else{
 			printf("daddr is not equal to %s\n",mac);	
-		}        
+		} 
+        
+        return (char *)data->L2_data;
     }
 }
 
