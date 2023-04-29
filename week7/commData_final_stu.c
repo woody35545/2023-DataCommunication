@@ -542,8 +542,8 @@ void check_is_server(char *const *argv)
     }
     pclose(fp);
 	// 처음 켜지는 쪽이 server가 되도록 설정
-    if(process_count == 0) is_server = 1; else is_server = 0;
-	//is_server = process_count == 1;
+    //if(process_count == 0) is_server = 1; else is_server = 0;
+	is_server = process_count == 1;
 	//printf("[!] process_count: %d\n", process_count);
 	printf("[Debug] check_is_server: is_server: %d\n", is_server);
 
