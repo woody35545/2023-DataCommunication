@@ -256,7 +256,7 @@ void L2_send(char *input, int length)
     {
         if (is_server == 0) // client
         {
-            // 서버로 Address Request 하는 부분으로 해당 과정에서는 header 값들이 사용되지 않으나, 형식상 헤더값을 초기화 해주어 전송
+            // 서버로 Address Request 하는 부분으로 해당 과정에서는 header 값들이 사용되지 않으나, 형식상 헤더값을 초기화해주어 전송
             // L2 header에 있는 주소 필드(saddr, daddr)를 0으로 초기화, 가독성을 위해 기존코드에서 for문으로 변경
             for(int i=0; i<6; i++){ data.saddr[i] = 0x00; data.daddr[i] = 0x00; }
 
@@ -276,7 +276,7 @@ void L2_send(char *input, int length)
             // Server
             /* 서버는 L2_send에서 자신의 Mac 주소를 Addr 구조체 변수인 addrData에 할당한 후, addrData를 L2_data에 담는 방식으로 자신의 MAC 주소를 클라이언트로 전송하도록 구현하였습니다. */
 
-            // L1의 L1_data에 있는 Addr.ip 값을 addrData.ip에 복사해서 L2의 L2_data에 할당
+            // L1_send로부터 받은 L1의 L1_data에 있는 Addr.ip 값을 addrData.ip에 복사, 해당 부분은 과제에서 제공해준 코드 그대로 사용
             struct L1* tempL1 = (struct L1 *)input; // input을 L1 struct pointer로 casting 후 tempL1에 할당
             struct Addr* tempAddr = (struct Addr *)tempL1->L1_data;  // L1_data에 담긴 주소를 가져오기 위해 tempL1->L1_data를 Addr struct Pointer로 캐스팅하고 tempAddr에 할당
             memcpy(addrData.ip, tempAddr->ip, sizeof(tempAddr->ip)); // tempAddr(L1_data.ip의 시작주소)를 addrData.ip로 복사
