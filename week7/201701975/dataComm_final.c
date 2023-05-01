@@ -276,7 +276,7 @@ void L2_send(char *input, int length)
             // Server
             /* 서버는 L2_send에서 자신의 Mac 주소를 Addr 구조체 변수인 addrData에 할당한 후, addrData를 L2_data에 담는 방식으로 자신의 MAC 주소를 클라이언트로 전송하도록 구현하였습니다. */
 
-            // L1 payload(=L1.L1_data)에 있는 Addr.ip 값을 addrData.ip에 복사해서 L2의 payload(L2.L2_data)에 할당
+            // L1의 L1_data에 있는 Addr.ip 값을 addrData.ip에 복사해서 L2의 L2_data에 할당
             struct L1* tempL1 = (struct L1 *)input; // input을 L1 struct pointer로 casting 후 tempL1에 할당
             struct Addr* tempAddr = (struct Addr *)tempL1->L1_data;  // L1_data에 담긴 주소를 가져오기 위해 tempL1->L1_data를 Addr struct Pointer로 캐스팅하고 tempAddr에 할당
             memcpy(addrData.ip, tempAddr->ip, sizeof(tempAddr->ip)); // tempAddr(L1_data.ip의 시작주소)를 addrData.ip로 복사
