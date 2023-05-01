@@ -411,7 +411,6 @@ char *L1_receive(int *length)
             if(i==3) cur += sprintf(str_daddr+cur, "%d" ,data->daddr[i]); else cur += sprintf(str_daddr+cur, "%d." ,data->daddr[i]);
         }
 		
-        if(is_server == 1){ // 주소 검증, 서버의 경우에만 검증 수행하도록 구현
         int result = strcmp(str_daddr, str_ip); // 검증
 		if (result == 0) {
             //printf("IP Equal\n");	
@@ -419,8 +418,8 @@ char *L1_receive(int *length)
 	        return (char *)data->L1_data;
 		} else {
 			printf("daddr is not equal to %s\n",str_ip);			
-		    }       
-        }
+	    }       
+        
     }
 }
 
