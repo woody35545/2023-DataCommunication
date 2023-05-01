@@ -220,8 +220,6 @@ void L1_send(char *input, int length)
             data.daddr[i] = addr.ip[i]; // 데이터 값 대입
 		
         }
-
-
 	
         data.saddr[0] = 0x00;
         data.saddr[1] = 0x00;
@@ -494,17 +492,23 @@ char *L2_receive(int *length)
             if(i==5) cur += sprintf(str_daddr+cur, "%02X" ,data->daddr[i]); 
             else cur += sprintf(str_daddr+cur, "%02X:" ,data->daddr[i]);
         }
+
+        // 검증 시각화를 위한 출력문
+        if(is_server == 1){
+            printf("receive my MAC --> %s", str_daddr); // receive destination MAC 주소 출력
+            printf("mac: %s", mac); // server의 mac 주소 출력
+        }
                 
 		int result = strcmp(str_daddr, mac);
 		if(result==0){			
-            //printf("Mac Equal\n");	
+			printf("daddr is equal to %s\n",mac); // destination MAC 주소와 서버의 MAC 주소가 동일한 경우 출력문
 			*length = *length - sizeof(data->daddr) - sizeof(data->length) - sizeof(data->saddr);
 	        return (char *)data->L2_data;
 		}else{
-			printf("daddr is not equal to %s\n",mac);	
+			printf("daddr is not equal to %s\n",mac); // destination MAC 주소와 서버의 MAC 주소가 동일하지 않은 경우 출력문
 		} 
         
-        return (char *)data->L2_data;
+        //return (char *)data->L2_data;
     }
 }
 
