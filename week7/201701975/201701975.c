@@ -197,7 +197,7 @@ void L1_send(char *input, int length)
 			
             /* 구현. IP 주소 헤더에 붙임 */
             /* Addr 구조체 addrData에 ip 부분에 server의 ip를 할당한후 L1_data에 할당해서 L2로 전송 */
-            addrData.type = 1; // Find Address에 대한 Response이므로 1로 설정
+            //addrData.type = 1; // Find Address에 대한 Response이므로 1로 설정
             memset(data.L1_data, 0x00, MAX_SIZE); // L1_data에 할당하기 전에 L1_data 메모리값 초기화
             memcpy(data.L1_data, &addrData, sizeof(addrData)); // L1_data에 addrData 시작주소부터 addrData의 size만큼 복사
 
