@@ -401,13 +401,17 @@ char *L1_receive(int *length)
 
         // 서버측에서 주소 검증
         if(is_server == 1){ // 서버의 경우에만 검증을 수행하도록 구현
-            printf("receive my IP --> %s\n", str_daddr); // receive한 destination IP 주소 출력
-            printf("str_ip: %s\n", str_ip); // server의 ip 주소 출력
+            /* receive한 destination IP 주소 출력 */
+            //printf("receive my IP --> %s\n", str_daddr); 
+            
+            /* server의 ip 주소 출력 */
+            //printf("str_ip: %s\n", str_ip);
 
             int result = strcmp(str_daddr, str_ip); // 주소 비교
             
             if (result == 0) {
-                printf("daddr is equal to %s\n",str_ip); // ip 주소가 동일할 경우 출력문		
+                /* ip 주소가 동일할 경우 출력문	*/
+                // printf("daddr is equal to %s\n",str_ip); 	
                 *length = *length - sizeof(data->daddr) - sizeof(data->length) - sizeof(data->saddr);
                 return (char *)data->L1_data;
         } else {
@@ -484,13 +488,17 @@ char *L2_receive(int *length)
 
         // 검증 시각화를 위한 출력문, 서버의 경우만 검증 수행하도록 구현
         if(is_server == 1){
-                printf("receive my MAC --> %s\n", str_daddr); // receive destination MAC 주소 출력
-                printf("mac: %s\n", mac); // server의 mac 주소 출력
+                /* receive destination MAC 주소 출력 */
+                //printf("receive my MAC --> %s\n", str_daddr); 
+                
+                /* server의 mac 주소 출력 */
+                //printf("mac: %s\n", mac); 
                     
             int result = strcmp(str_daddr, mac); // 주소 비교
 
             if(result==0){			
-                printf("daddr is equal to %s\n",mac); // destination MAC 주소와 서버의 MAC 주소가 동일한 경우 출력문
+                // destination MAC 주소와 서버의 MAC 주소가 동일한 경우 출력문
+                // printf("daddr is equal to %s\n",mac);
                 *length = *length - sizeof(data->daddr) - sizeof(data->length) - sizeof(data->saddr);
                 return (char *)data->L2_data;
             }else{
