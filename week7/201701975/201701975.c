@@ -394,7 +394,9 @@ char *L1_receive(int *length)
         data = (struct L1 *)L2_receive(length);		
 		
         // 편의상 char 형태로  두개의 값을 비교
-        char str_ip[16];
+        char str_ip[16]; // my ip
+        char str_daddr[16]; // received ip
+
         int cur =0;
 
         /* 구현 . sprintf(??) */
@@ -403,7 +405,6 @@ char *L1_receive(int *length)
             if(i==3) cur += sprintf(str_ip+cur, "%d" ,addr.ip[i]); else cur += sprintf(str_ip+cur, "%d." ,addr.ip[i]);
         }
 
-        char str_daddr[16]; // received ip
         
         // sprint 함수를 이용하여 data->daddr을 integer 형태로 읽어서 str_daddr에 IP 표현 형식(x.x.x.x)으로 저장
         cur = 0;
@@ -411,6 +412,9 @@ char *L1_receive(int *length)
             if(i==3) cur += sprintf(str_daddr+cur, "%d" ,data->daddr[i]); else cur += sprintf(str_daddr+cur, "%d." ,data->daddr[i]);
         }
 		if(is_server == 1){ // 서버의 경우에만 검증을 수행하도록 구현
+        printf("receive my IP --> %s\n", str_daddr); // receive한 destination IP 주소 출력
+        printf("str_ip: %s\n", str_ip); // server의 ip 주소 출력
+
         int result = strcmp(str_daddr, str_ip); // 검증
 		if (result == 0) {
             //printf("IP Equal\n");	
@@ -418,7 +422,7 @@ char *L1_receive(int *length)
 	        return (char *)data->L1_data;
 		} else {
 			printf("daddr is not equal to %s\n",str_ip);			
-	    }       } else{	        
+	    }       } else{	
             			*length = *length - sizeof(data->daddr) - sizeof(data->length) - sizeof(data->saddr);
                         return (char *)data->L1_data; }
         
