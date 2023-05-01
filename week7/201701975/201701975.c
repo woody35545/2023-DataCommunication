@@ -410,7 +410,7 @@ char *L1_receive(int *length)
         for(int i =0; i<4; i++) {
             if(i==3) cur += sprintf(str_daddr+cur, "%d" ,data->daddr[i]); else cur += sprintf(str_daddr+cur, "%d." ,data->daddr[i]);
         }
-		
+		if(is_server == 1){
         int result = strcmp(str_daddr, str_ip); // 검증
 		if (result == 0) {
             //printf("IP Equal\n");	
@@ -418,7 +418,9 @@ char *L1_receive(int *length)
 	        return (char *)data->L1_data;
 		} else {
 			printf("daddr is not equal to %s\n",str_ip);			
-	    }       
+	    }       } else{	        
+            			*length = *length - sizeof(data->daddr) - sizeof(data->length) - sizeof(data->saddr);
+                        return (char *)data->L1_data; }
         
     }
 }
@@ -505,7 +507,7 @@ char *L2_receive(int *length)
             }else{
                 printf("daddr is not equal to %s\n",mac); // destination MAC 주소와 서버의 MAC 주소가 동일하지 않은 경우 출력문
             }           
-        }
+        } else { return (char *)data->L2_data;}
     }
 }
 
