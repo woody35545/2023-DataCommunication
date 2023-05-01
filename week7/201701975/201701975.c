@@ -172,7 +172,7 @@ void L1_send(char *input, int length)
         {
             // server
             printf("[%s] my IP --> ", __func__);
-            unsigned char ip[] = {192, 168, 64, 5}; // 서버 ip
+            unsigned char ip[] = {192, 168, 64, 7}; // 과제 진행했던 vm의 ip로 할당
             for (int i = 0; i < sizeof(ip); i++)
             // 서버는 전역변수(addr)에 서버 자신의 주소를 저장 
             // client에게 주소를 전달해주기 위해 addrData.ip에 server ip 값 할당
@@ -283,13 +283,13 @@ void L2_send(char *input, int length)
             // tempAddr(L1_data.ip의 시작주소)부터 addrData.ip의 size 만큼 addrData.ip로 복사
             memcpy(addrData.ip, tempAddr->ip, sizeof(addrData.ip)); 
 
-            //76:04:a0:7e:8f:a1 -> 과제 진행했던 vm의 MAC Address
+            //6e:d4:8d:08:5e:e9 -> 과제 진행했던 vm의 MAC Address
             // 과제의 요구사항에 따라 서버의 주소는 사전에 정의해서 사용하도록 구현
-            unsigned char mac[] = {0x76, 0x04, 0xa0, 0x7e, 0x8f, 0xa1}; 
+            unsigned char mac[] = {0x6e, 0xd4, 0x8d, 0x08, 0x5e, 0xe9}; // 과제 진행했던 vm의 mac 주소로 할당
             printf("[%s] my MAC --> ", __func__);
             for (int i = 0; i < 6; i++)
             {
-				/* 구현. addrData.mac 과 addr에 각각 mac[]의 값 할당 */ 
+				/* 구현. addrData.mac 과 addr에 각각 mac 주소 할당 */ 
                 addrData.mac[i] = mac[i]; // 전송할 Addr 구조체 변수인 addrData.mac에 서버의 MAC 주소를 할당
 				addr.mac[i]= mac[i]; // 전역변수 addr.mac에 mac값 할당
                 /*----------------------------------------------*/
