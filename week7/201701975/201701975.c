@@ -13,7 +13,6 @@
 #include <string.h>
 #define MAX_SIZE 300
 #define IP_ADDRESS "127.0.0.1"
-#define MAC_ADDRESS "76:04:A0:7E:8F:A1"
 
 struct L1
 {
@@ -175,7 +174,8 @@ void L1_send(char *input, int length)
             printf("[%s] my IP --> ", __func__);
             unsigned char ip[] = {192, 168, 64, 5}; // 서버 ip
             for (int i = 0; i < sizeof(ip); i++)
-            // addrData.ip에 server ip 값 할당
+            // 서버는 전역변수(addr)에 서버 자신의 주소를 저장 
+            // client에게 주소를 전달해주기 위해 addrData.ip에 server ip 값 할당
             {
                 addrData.ip[i] = ip[i];
 				addr.ip[i]= ip[i];
@@ -396,15 +396,14 @@ char *L1_receive(int *length)
         data = (struct L1 *)L2_receive(length);		
 		
         // 편의상 char 형태로  두개의 값을 비교
-        int my_ip[4] = {192,168,64,5}; // 과제의 요구사항에 따라서 server는 주소 정의하여 사용
         char str_ip[16];
         int cur =0;
 
         /* 구현 . sprintf(??) */
-        // sprint 함수를 이용하여 int 배열로 정의한 server 주소(my_ip)를 str_ip에 IP 표현 형식(x.x.x.x)에 맞게 할당
+        // sprint 함수를 이용하여 addr에 저장했던 서버자신의 주소를 str_ip에 IP 표현 형식(x.x.x.x)에 맞게 할당
         for(int i =0; i<4; i++) {
-            if(i==3) cur += sprintf(str_ip+cur, "%d" ,my_ip[i]);
-            else cur += sprintf(str_ip+cur, "%d." ,my_ip[i]);
+            if(i==3) cur += sprintf(str_ip+cur, "%d" ,addr.ip[i]);
+            else cur += sprintf(str_ip+cur, "%d." ,addr.ip[i]);
         }
 
         char str_daddr[16]; // received ip
@@ -476,16 +475,22 @@ char *L2_receive(int *length)
     }
     else if (control.type == 1)
     {
+        // 구현. L1_rev 참고하여 구현
 
         data = (struct L2 *)L3_receive(length); // data는 L3_receive가 리턴한 L2 데이터를 접근하기 위한 L2 struct pointer 변수
-        
         *length = *length - sizeof(data->daddr) - sizeof(data->length) - sizeof(data->saddr); // 현재 length에서 L2 를 제외한 크기로 갱신(Decapsulation)
 
-		char mac[18] = MAC_ADDRESS; // 클라이언트가 보낸 패킷의 destination mac과 서버의 mac이 동일한지 확인하기 위한 변수, 과제의 요구사항에 따라 서버의 MAC 주소는 사전에 정의하여 사용하도록 구현 
+		char mac[18]; // 검증을 위해 서버 mac 주소를 담을 변수
 		char str_daddr[18]; // received mac을 문자열 형식으로 담기 위한 변수, 주소 검증시 사용.
         
-        // 구현. L1_rev 참고하여 구현
-        // sprint 함수를 client로부터 받은 패킷에서 MAC 주소를 16진수로 읽은 후, str_daddr변수에 MAC 주소 표현 형식(XX:XX:XX:XX:XX:XX)에 맞게 할당되도록 구현
+
+        //  sprint 함수를 이용하여  addr에 저장했던 서버 자신의 주소를 mac 변수에 MAC 주소 표현 형식(XX:XX:XX:XX:XX:XX)에 맞게 할당되도록 구현
+        for(int i =0; i<6; i++) {
+            if(i==5) cur += sprintf(mac+cur, "%02X" , addr.mac[i]); 
+            else cur += sprintf(mac+cur, "%02X:" , addr.mac[i]);
+        }
+
+        // sprint 함수를 이용하여 client로부터 받은 패킷에서 MAC 주소를 16진수로 읽어 str_daddr변수에 MAC 주소 표현 형식(XX:XX:XX:XX:XX:XX)에 맞게 할당되도록 구현
         int cur = 0;
         for(int i =0; i<6; i++) {
             if(i==5) cur += sprintf(str_daddr+cur, "%02X" ,data->daddr[i]); 
