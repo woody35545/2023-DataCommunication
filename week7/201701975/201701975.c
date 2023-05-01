@@ -400,8 +400,7 @@ char *L1_receive(int *length)
         /* 구현 . sprintf(??) */
         // sprint 함수를 이용하여 addr에 저장했던 서버자신의 주소를 str_ip에 IP 표현 형식(x.x.x.x)에 맞게 할당
         for(int i =0; i<4; i++) {
-            if(i==3) cur += sprintf(str_ip+cur, "%d" ,addr.ip[i]);
-            else cur += sprintf(str_ip+cur, "%d." ,addr.ip[i]);
+            if(i==3) cur += sprintf(str_ip+cur, "%d" ,addr.ip[i]); else cur += sprintf(str_ip+cur, "%d." ,addr.ip[i]);
         }
 
         char str_daddr[16]; // received ip
@@ -409,11 +408,10 @@ char *L1_receive(int *length)
         // sprint 함수를 이용하여 data->daddr을 integer 형태로 읽어서 str_daddr에 IP 표현 형식(x.x.x.x)으로 저장
         cur = 0;
         for(int i =0; i<4; i++) {
-            if(i==3) cur += sprintf(str_daddr+cur, "%d" ,data->daddr[i]);
-            else cur += sprintf(str_daddr+cur, "%d." ,data->daddr[i]);
+            if(i==3) cur += sprintf(str_daddr+cur, "%d" ,data->daddr[i]); else cur += sprintf(str_daddr+cur, "%d." ,data->daddr[i]);
         }
 		
-
+        if(is_server == 1){ // 주소 검증, 서버의 경우에만 검증 수행하도록 구현
         int result = strcmp(str_daddr, str_ip); // 검증
 		if (result == 0) {
             //printf("IP Equal\n");	
@@ -421,7 +419,8 @@ char *L1_receive(int *length)
 	        return (char *)data->L1_data;
 		} else {
 			printf("daddr is not equal to %s\n",str_ip);			
-		}       
+		    }       
+        }
     }
 }
 
@@ -493,22 +492,21 @@ char *L2_receive(int *length)
             else cur += sprintf(str_daddr+cur, "%02X:" ,data->daddr[i]);
         }
 
-        // 검증 시각화를 위한 출력문
+        // 검증 시각화를 위한 출력문, 서버의 경우만 검증 수행하도록 구현
         if(is_server == 1){
-            printf("receive my MAC --> %s", str_daddr); // receive destination MAC 주소 출력
-            printf("mac: %s", mac); // server의 mac 주소 출력
+                printf("receive my MAC --> %s\n", str_daddr); // receive destination MAC 주소 출력
+                printf("mac: %s\n", mac); // server의 mac 주소 출력
+            
+                    
+            int result = strcmp(str_daddr, mac);
+            if(result==0){			
+                printf("daddr is equal to %s\n",mac); // destination MAC 주소와 서버의 MAC 주소가 동일한 경우 출력문
+                *length = *length - sizeof(data->daddr) - sizeof(data->length) - sizeof(data->saddr);
+                return (char *)data->L2_data;
+            }else{
+                printf("daddr is not equal to %s\n",mac); // destination MAC 주소와 서버의 MAC 주소가 동일하지 않은 경우 출력문
+            }           
         }
-                
-		int result = strcmp(str_daddr, mac);
-		if(result==0){			
-			printf("daddr is equal to %s\n",mac); // destination MAC 주소와 서버의 MAC 주소가 동일한 경우 출력문
-			*length = *length - sizeof(data->daddr) - sizeof(data->length) - sizeof(data->saddr);
-	        return (char *)data->L2_data;
-		}else{
-			printf("daddr is not equal to %s\n",mac); // destination MAC 주소와 서버의 MAC 주소가 동일하지 않은 경우 출력문
-		} 
-        
-        //return (char *)data->L2_data;
     }
 }
 
