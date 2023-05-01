@@ -271,17 +271,17 @@ void L2_send(char *input, int length)
         {
             // L1 payload(=L1.L1_data)에 있는 Addr.ip 값을 addrData.ip에 복사해서 L2의 payload(L2.L2_data)에 할당
             struct L1* tempL1 = (struct L1 *)input; // input을 L1 struct pointer로 casting 후 tempL1에 할당
-            struct Addr* tempAddr = (struct Addr *)tempL1->L1_data;  // tempAddr는 인자로 받은 L1.L1_data를 가리키는 포인터
+            struct Addr* tempAddr = (struct Addr *)tempL1->L1_data;  // L1_data에 담긴 주소를 가져오기 위해 tempL1->L1_data를 Addr struct Pointer로 캐스팅하고 tempAddr에 할당
             memcpy(addrData.ip, tempAddr->ip, sizeof(tempAddr->ip)); // tempAddr(L1_data.ip의 시작주소)를 addrData.ip로 복사
 
             // 6e:d4:8d:08:5e:e9 -> 과제를 진행했던 vm의 MAC Address
             // 과제의 요구사항에 따라 서버의 주소는 사전에 정의해서 사용하도록 구현
-            unsigned char mac[] = {0x6e, 0xd4, 0x8d, 0x08, 0x5e, 0xe9}; // 과제 진행했던 vm의 mac 주소로 할당
+            unsigned char mac[] = {0x6e, 0xd4, 0x8d, 0x08, 0x5e, 0xe9}; // 과제 진행했던 vm의 mac 주소로 선언
             printf("[%s] my MAC --> ", __func__);
             for (int i = 0; i < 6; i++)
             {
 				/* 구현. addrData.mac 과 addr에 각각 mac 주소 할당 */ 
-                addrData.mac[i] = mac[i]; // 전송할 Addr 구조체 변수인 addrData.mac에 서버의 MAC 주소를 할당
+                addrData.mac[i] = mac[i]; // 전송할 주소를 담을 Addr 구조체 변수 addrData.mac에 서버의 MAC 주소를 할당
 				addr.mac[i]= mac[i]; // 전역변수 addr.mac에 mac값 할당
 
                 // hint. 아래는 출력문임 
@@ -389,7 +389,7 @@ char *L1_receive(int *length)
         int cur =0;
 
         /* 구현 . sprintf(??) */
-        // sprint 함수를 이용하여 addr에 저장했던 서버자신의 주소를 str_ip에 IP 표현 형식(x.x.x.x)에 맞게 할당
+        // sprint 함수를 이용하여 전역변수 addr에 저장했던 서버자신의 주소를 str_ip에 IP 표현 형식(x.x.x.x)에 맞게 할당
         for(int i =0; i<4; i++) {
             if(i==3) cur += sprintf(str_ip+cur, "%d" ,addr.ip[i]); else cur += sprintf(str_ip+cur, "%d." ,addr.ip[i]);}
 
@@ -472,7 +472,7 @@ char *L2_receive(int *length)
 		char mac[18]; // 검증을 위해 서버 mac 주소를 담을 변수
 		char str_daddr[18]; // received mac을 문자열 형식으로 담기 위한 변수, 주소 검증시 사용.
         
-        // sprint 함수를 이용하여  addr에 저장했던 서버 자신의 주소를 mac 변수에 MAC 주소 표현 형식(XX:XX:XX:XX:XX:XX)에 맞게 할당되도록 구현
+        // sprint 함수를 이용하여 전역변수 addr에 저장했던 서버 자신의 주소를 mac 변수에 MAC 주소 표현 형식(XX:XX:XX:XX:XX:XX)에 맞게 할당되도록 구현
         int cur = 0;
         for(int i =0; i<6; i++) {
             if(i==5) cur += sprintf(mac+cur, "%02X" , addr.mac[i]); else cur += sprintf(mac+cur, "%02X:" , addr.mac[i]);}
