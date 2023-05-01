@@ -476,7 +476,6 @@ char *L2_receive(int *length)
 
         data = (struct L2 *)L3_receive(length); // data는 L3_receive가 리턴한 L2 데이터를 접근하기 위한 L2 struct pointer 변수
         
-        if(is_server == 1){ // 이번 과제의 요구사항에 따라 서버에서만 검증을 수행하도록 구현
             char mac[18]; // 검증을 위해 서버 mac 주소를 담을 변수
 		    char str_daddr[18]; // received mac을 문자열 형식으로 담기 위한 변수, 주소 검증시 사용.
         
@@ -503,11 +502,6 @@ char *L2_receive(int *length)
             }else{
                 printf("daddr is not equal to %s\n",mac);	
                 } 
-            }
-
-        else if(is_server == 0) {
-            *length = *length - sizeof(data->daddr) - sizeof(data->length) - sizeof(data->saddr);// 현재 length에서 L2 를 제외한 크기로 갱신(Decapsulation)
-            return (char *)data->L2_data;} // client인 경우 검증 하지 않고 채팅 기능만 수행하도록 구현
     }
 }
 
