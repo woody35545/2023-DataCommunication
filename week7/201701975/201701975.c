@@ -197,6 +197,7 @@ void L1_send(char *input, int length)
 			
             /* 구현. IP 주소 헤더에 붙임 */
             /* Addr 구조체 addrData에 ip 부분에 server의 ip를 할당한후 L1_data에 할당해서 L2로 전송 */
+            addrData.type = 1; // Find Address에 대한 Response이므로 1로 설정
             memset(data.L1_data, 0x00, MAX_SIZE); // L1_data에 할당하기 전에 L1_data 메모리값 초기화
             memcpy(data.L1_data, &addrData, sizeof(addrData)); // L1_data에 addrData 시작주소부터 addrData의 size만큼 복사
 
@@ -395,35 +396,41 @@ char *L1_receive(int *length)
     {
         data = (struct L1 *)L2_receive(length);		
 		
-        // 편의상 char 형태로  두개의 값을 비교
-        char str_ip[16];
-        int cur =0;
-
-        /* 구현 . sprintf(??) */
-        // sprint 함수를 이용하여 addr에 저장했던 서버자신의 주소를 str_ip에 IP 표현 형식(x.x.x.x)에 맞게 할당
-        for(int i =0; i<4; i++) {
-            if(i==3) cur += sprintf(str_ip+cur, "%d" ,addr.ip[i]);
-            else cur += sprintf(str_ip+cur, "%d." ,addr.ip[i]);
-        }
-
-        char str_daddr[16]; // received ip
-        
-        // sprint 함수를 이용하여 data->daddr을 integer 형태로 읽어서 str_daddr에 IP 표현 형식(x.x.x.x)으로 저장
-        cur = 0;
-        for(int i =0; i<4; i++) {
-            if(i==3) cur += sprintf(str_daddr+cur, "%d" ,data->daddr[i]);
-            else cur += sprintf(str_daddr+cur, "%d." ,data->daddr[i]);
-        }
 		
+        if(is_server == 1){ // 이번 과제의 요구사항에 따라 서버에서만 검증을 수행하도록 구현
+        // 편의상 char 형태로  두개의 값을 비교
+            char str_ip[16];
+            int cur =0;
 
-        int result = strcmp(str_daddr, str_ip); // 검증
-		if (result == 0) {
-            //printf("IP Equal\n");	
-			*length = *length - sizeof(data->daddr) - sizeof(data->length) - sizeof(data->saddr);
-	        return (char *)data->L1_data;
-		} else {
-			printf("daddr is not equal to %s\n",str_ip);			
-		}       
+            /* 구현 . sprintf(??) */
+            // sprint 함수를 이용하여 addr에 저장했던 서버자신의 주소를 str_ip에 IP 표현 형식(x.x.x.x)에 맞게 할당
+            for(int i =0; i<4; i++) {
+                if(i==3) cur += sprintf(str_ip+cur, "%d" ,addr.ip[i]);
+                else cur += sprintf(str_ip+cur, "%d." ,addr.ip[i]);
+            }
+
+            char str_daddr[16]; // received ip
+            
+            // sprint 함수를 이용하여 data->daddr을 integer 형태로 읽어서 str_daddr에 IP 표현 형식(x.x.x.x)으로 저장
+            cur = 0;
+            for(int i =0; i<4; i++) {
+                if(i==3) cur += sprintf(str_daddr+cur, "%d" ,data->daddr[i]);
+                else cur += sprintf(str_daddr+cur, "%d." ,data->daddr[i]);
+            }
+            
+            int result = strcmp(str_daddr, str_ip); // 검증
+            
+            if (result == 0) {
+                //printf("IP Equal\n");	
+                *length = *length - sizeof(data->daddr) - sizeof(data->length) - sizeof(data->saddr);
+                return (char *)data->L1_data;
+            } else {
+                printf("daddr is not equal to %s\n",str_ip);			
+                }
+        }  
+        else if(is_server == 0) {
+            *length = *length - sizeof(data->daddr) - sizeof(data->length) - sizeof(data->saddr); // L1 Decapsulation을 수행한 크기로 갱신
+            return (char *)data->L1_data; } // client인 경우 검증 하지 않고 채팅 기능만 수행하도록 구현
     }
 }
 
@@ -466,8 +473,6 @@ char *L2_receive(int *length)
             for(int i=0; i<6; i++){
                 addr.mac[i] = addrData->mac[i]; // 전역변수 addr.mac에 server로부터 받은 서버 MAC 주소 할당
             }
-        
-            return (char *)data->L2_data;
         }
     }
     else if (control.type == 1)
@@ -475,36 +480,39 @@ char *L2_receive(int *length)
         // 구현. L1_rev 참고하여 구현
 
         data = (struct L2 *)L3_receive(length); // data는 L3_receive가 리턴한 L2 데이터를 접근하기 위한 L2 struct pointer 변수
-        *length = *length - sizeof(data->daddr) - sizeof(data->length) - sizeof(data->saddr); // 현재 length에서 L2 를 제외한 크기로 갱신(Decapsulation)
-
-		char mac[18]; // 검증을 위해 서버 mac 주소를 담을 변수
-		char str_daddr[18]; // received mac을 문자열 형식으로 담기 위한 변수, 주소 검증시 사용.
+        
+        if(is_server == 1){ // 이번 과제의 요구사항에 따라 서버에서만 검증을 수행하도록 구현
+            char mac[18]; // 검증을 위해 서버 mac 주소를 담을 변수
+		    char str_daddr[18]; // received mac을 문자열 형식으로 담기 위한 변수, 주소 검증시 사용.
         
 
-        //  sprint 함수를 이용하여  addr에 저장했던 서버 자신의 주소를 mac 변수에 MAC 주소 표현 형식(XX:XX:XX:XX:XX:XX)에 맞게 할당되도록 구현
-        int cur = 0;
-        for(int i =0; i<6; i++) {
-            if(i==5) cur += sprintf(mac+cur, "%02X" , addr.mac[i]); 
-            else cur += sprintf(mac+cur, "%02X:" , addr.mac[i]);
+            //  sprint 함수를 이용하여 addr에 저장했던 서버 자신의 주소를 mac 변수에 MAC 주소 표현 형식(XX:XX:XX:XX:XX:XX)에 맞게 할당되도록 구현
+            int cur = 0;
+            for(int i =0; i<6; i++) {
+                if(i==5) cur += sprintf(mac+cur, "%02X" , addr.mac[i]); 
+                else cur += sprintf(mac+cur, "%02X:" , addr.mac[i]);
+            }
+
+            // sprint 함수를 이용하여 client로부터 받은 패킷에서 MAC 주소를 16진수로 읽어 str_daddr변수에 MAC 주소 표현 형식(XX:XX:XX:XX:XX:XX)에 맞게 할당되도록 구현
+            cur = 0;
+            for(int i =0; i<6; i++) {
+                if(i==5) cur += sprintf(str_daddr+cur, "%02X" ,data->daddr[i]); 
+                else cur += sprintf(str_daddr+cur, "%02X:" ,data->daddr[i]);
         }
 
-        // sprint 함수를 이용하여 client로부터 받은 패킷에서 MAC 주소를 16진수로 읽어 str_daddr변수에 MAC 주소 표현 형식(XX:XX:XX:XX:XX:XX)에 맞게 할당되도록 구현
-        cur = 0;
-        for(int i =0; i<6; i++) {
-            if(i==5) cur += sprintf(str_daddr+cur, "%02X" ,data->daddr[i]); 
-            else cur += sprintf(str_daddr+cur, "%02X:" ,data->daddr[i]);
-        }
-                
-		int result = strcmp(str_daddr, mac);
-		if(result==0){			
-            //printf("Mac Equal\n");	
-			*length = *length - sizeof(data->daddr) - sizeof(data->length) - sizeof(data->saddr);
-	        return (char *)data->L2_data;
-		}else{
-			printf("daddr is not equal to %s\n",mac);	
-		} 
-        
-        return (char *)data->L2_data;
+		    int result = strcmp(str_daddr, mac);
+		    if(result==0){			
+                //printf("Mac Equal\n");	
+			    *length = *length - sizeof(data->daddr) - sizeof(data->length) - sizeof(data->saddr);
+	            return (char *)data->L2_data;
+            }else{
+                printf("daddr is not equal to %s\n",mac);	
+                } 
+            }
+
+        else if(is_server == 0) {
+            *length = *length - sizeof(data->daddr) - sizeof(data->length) - sizeof(data->saddr);// 현재 length에서 L2 를 제외한 크기로 갱신(Decapsulation)
+            return (char *)data->L2_data;} // client인 경우 검증 하지 않고 채팅 기능만 수행하도록 구현
     }
 }
 
