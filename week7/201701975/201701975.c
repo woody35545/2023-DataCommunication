@@ -445,7 +445,6 @@ char *L2_receive(int *length)
             // client
             // 구현. 데이터 파싱과 addr.mac에 값 대입 
 			// data =   *length =     addrData = 
-            /*----------------------------------*/
             data = (struct L2 *)L3_receive(length); // L3 에서 리턴한 L2 패킷 정보를 L2 struct pointer로 casting 하여 data에 할당
             
             /* Find Address 모드에서는 server가 response 할 때 Addr 구조체에 자신의 MAC 주소를 담은 후, Addr 구조체 전체를 L2_data에 넣어서 전송하므로
@@ -467,9 +466,7 @@ char *L2_receive(int *length)
             for(int i=0; i<6; i++){
                 addr.mac[i] = addrData->mac[i]; // 전역변수 addr.mac에 server로부터 받은 서버 MAC 주소 할당
             }
-           
-            /*----------------------------------*/
-
+        
             return (char *)data->L2_data;
         }
     }
@@ -485,13 +482,14 @@ char *L2_receive(int *length)
         
 
         //  sprint 함수를 이용하여  addr에 저장했던 서버 자신의 주소를 mac 변수에 MAC 주소 표현 형식(XX:XX:XX:XX:XX:XX)에 맞게 할당되도록 구현
+        int cur = 0;
         for(int i =0; i<6; i++) {
             if(i==5) cur += sprintf(mac+cur, "%02X" , addr.mac[i]); 
             else cur += sprintf(mac+cur, "%02X:" , addr.mac[i]);
         }
 
         // sprint 함수를 이용하여 client로부터 받은 패킷에서 MAC 주소를 16진수로 읽어 str_daddr변수에 MAC 주소 표현 형식(XX:XX:XX:XX:XX:XX)에 맞게 할당되도록 구현
-        int cur = 0;
+        cur = 0;
         for(int i =0; i<6; i++) {
             if(i==5) cur += sprintf(str_daddr+cur, "%02X" ,data->daddr[i]); 
             else cur += sprintf(str_daddr+cur, "%02X:" ,data->daddr[i]);
