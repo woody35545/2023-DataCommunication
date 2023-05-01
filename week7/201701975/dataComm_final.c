@@ -171,6 +171,9 @@ void L1_send(char *input, int length)
         else
         {
             // server
+
+            /* Find Address 모드에서 Server의 L1_send는 Addr 구조체에 자신의 IP 주소를 담고, 해당 구조체를 L1.L1_data에 할당하여 Response 하도록 구현하였습니다. */
+
             printf("[%s] my IP --> ", __func__);
             unsigned char ip[] = {192, 168, 64, 7}; // 과제 진행했던 vm의 ip로 할당
             for (int i = 0; i < sizeof(ip); i++)
@@ -203,18 +206,18 @@ void L1_send(char *input, int length)
             size = sizeof(struct L1) - sizeof(data.L1_data) + sizeof(addrData); // 실제로 L1 struct에 할당되는 크기 계산
             memset(temp, 0x00, 350); // L2에 넘겨줄 데이터를 담을 temp 초기화
             memcpy(temp, (void *)&data, size); // temp 에 L1의 패킷 정보를 담고있는 data(header+L1_data)변수를 앞서 계산했던 L1에 실제로 할당한 size 만큼 복사
-            /*----------------------*/
-
+            
             L2_send(temp, size); // 다음 Layer인 L2로 temp 전달
             
         }
     }
     else if (control.type == 1) // Not Find_Addr Mode[L1]
     {		
-		
+		/* Find Address 모드가 아닌 경우 클라이언트의 L1_send는 전송할 L1 Struct의 daddr(Destination IP)를 전역변수 addr에 저장해두었던 서버의 ip로 할당하도록 구현하였습니다.
+        해당 코드에서는 서버와 클라이언트를 따로 구분하는 조건은 주지 않았으나, 서버측에서만 검증한다는 과제의 가정에 따라서 아래와 같이 클라이언트의 입장에서만 header를 설정하도록 구현하였습니다. */
 		for (int i = 0; i < sizeof(addr.ip); i++) 
 		{
-            data.daddr[i] = addr.ip[i]; // 데이터 값 대입
+            data.daddr[i] = addr.ip[i]; // 데이터 값 대입, 클라이언트측의 addr 변수에는 Find Address 과정에서 저장했던 서버의 ip가 있으므로 해당 값을 이용하여 할당.
         }
 	
         data.saddr[0] = 0x00;
@@ -252,7 +255,7 @@ void L2_send(char *input, int length)
     {
         if (is_server == 0) // client
         {
-            // 서버로 Address Request 하는 부분
+            // 서버로 Address Request 하는 부분으로 해당 과정에서는 header 값들이 사용되지 않으나, 형식상 헤더값을 초기화 해주어 전송
             // L2 header에 있는 주소 필드(saddr, daddr)를 0으로 초기화, 가독성을 위해 기존코드에서 for문으로 변경
             for(int i=0; i<6; i++){ data.saddr[i] = 0x00; data.daddr[i] = 0x00; }
 
@@ -269,6 +272,9 @@ void L2_send(char *input, int length)
         }
         else
         {
+            // Server
+            /* 서버는 L2_send에서 자신의 Mac 주소를 Addr 구조체 변수인 addrData에 할당한 후, addrData를 L2_data에 담는 방식으로 자신의 MAC 주소를 클라이언트로 전송하도록 구현하였습니다. */
+
             // L1 payload(=L1.L1_data)에 있는 Addr.ip 값을 addrData.ip에 복사해서 L2의 payload(L2.L2_data)에 할당
             struct L1* tempL1 = (struct L1 *)input; // input을 L1 struct pointer로 casting 후 tempL1에 할당
             struct Addr* tempAddr = (struct Addr *)tempL1->L1_data;  // L1_data에 담긴 주소를 가져오기 위해 tempL1->L1_data를 Addr struct Pointer로 캐스팅하고 tempAddr에 할당
@@ -282,7 +288,7 @@ void L2_send(char *input, int length)
             {
 				/* 구현. addrData.mac 과 addr에 각각 mac 주소 할당 */ 
                 addrData.mac[i] = mac[i]; // 전송할 주소를 담을 Addr 구조체 변수 addrData.mac에 서버의 MAC 주소를 할당
-				addr.mac[i]= mac[i]; // 전역변수 addr.mac에 mac값 할당
+				addr.mac[i]= mac[i]; // 전역변수 addr.mac에 서버 자신의 mac 주소 저장
 
                 // hint. 아래는 출력문임 
                 printf("%02X", addrData.mac[i]);
@@ -315,6 +321,11 @@ void L2_send(char *input, int length)
     }
     else if (control.type == 1) // 채팅 모드
     {
+        /* 채팅 모드에서 L2_send는 클라이언트가 전역변수 addr에 저장했던 서버의 MAC 주소를 daddr로 할당하여 전송하도록 구현하였습니다.
+        해당 코드에서는 서버와 클라이언트를 따로 구분하는 조건은 주지 않았으나, 서버측에서만 검증한다는 과제의 가정에 따라서 아래와 같이 클라이언트의 입장에서만 L2의 header를 설정하도록 구현하였습니다. */
+        
+
+        // 이번 과제에서는 서버 주소를 받고, 받은 주소를 destination으로 설정하여 전송했을 때 서버에서 서버의 주소와 같은지 검증하는 과정이 주된 목적이므로 client 주소를 saddr로 할당하는 과정 생략
         for (int i=0; i< 6; i++) {data.daddr[i] = 0x00;} // 전송할 destination MAC 주소를 의미하는 data.daddr를 초기화
         
     	
@@ -360,8 +371,13 @@ char *L1_receive(int *length)
         }
         else if (is_server == 0)
         { // client
-            addrData = (struct Addr *) data;
+            /* Find Address 모드에서 클라이언트는 서버로부터 응답받은 서버의 ip 주소를 클라이언트의 전역변수 addr.ip에 할당합니다.
+            클라이언트의 L1_receive는 서버로부터 응답받은 L1 패킷에서 L1_data 부분에 저장된 Addr 구조체를 포인터를 이용하여 접근한 후 
+            서버가 담아서 보낸 IP를 클라이언트의 전역변수 addr에 할당하도록 구현하였습니다. */
 
+            addrData = (struct Addr *) data; // L2에서 리턴한 L1_data에 서버의 IP가 Addr 구조체로 할당되어 있으므로, 접근을 위해 Addr struct pointer로 casting 후 addrData에 할당
+
+            // Receive 한 서버의 IP 출력
             printf("[%s] your IP --> ", __func__);
             for(int i=0; i<4; i++){
                 if(i==3) printf( "%d", addrData->ip[i]);
@@ -372,7 +388,7 @@ char *L1_receive(int *length)
             printf("\n");
 
             for(int i=0; i<sizeof(addrData->ip); i++){
-                addr.ip[i] = addrData->ip[i];
+                addr.ip[i] = addrData->ip[i]; // 전역 변수 addr.ip 에 서버의 IP 주소인 addrData->ip 값 할당
             } 
             *length = *length - sizeof(data->daddr) - sizeof(data->length) - sizeof(data->saddr);
             return (char *)data->L1_data;
@@ -381,7 +397,9 @@ char *L1_receive(int *length)
     else if (control.type == 1)
     {
         data = (struct L1 *)L2_receive(length);		
-		
+		/* Chatting mode일 때 L1 Receive에서는 서버측일 경우 클라이언트로부터 받은 L1 패킷에서 daddr(Destination IP) 값을 가져와 서버 자신의 IP와 같은지 검증하는 과정을 진행하고,
+        클라이언트의 경우 검증하지 않고 기존의 채팅기능만 수행하도록 구현하였습니다. */
+
         // 편의상 char 형태로  두개의 값을 비교
         char str_ip[16]; // my ip
         char str_daddr[16]; // received ip
@@ -470,6 +488,9 @@ char *L2_receive(int *length)
     }
     else if (control.type == 1)
     {
+        /* Chatting mode일 때 L2 Receive에서는 서버측일 경우 클라이언트로부터 받은 L2 패킷에서 daddr(Destination MAC) 값을 가져와 서버 자신의 MAC 주소와 같은지 검증하도록 하고,
+        클라이언트의 경우 검증하지 않고 기존의 채팅기능만 수행하도록 구현하였습니다. */
+
         // 구현. L1_rev 참고하여 구현
         data = (struct L2 *)L3_receive(length); // data는 L3_receive가 리턴한 L2 데이터를 접근하기 위한 L2 struct pointer 변수
 
