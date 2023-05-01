@@ -410,7 +410,7 @@ char *L1_receive(int *length)
         for(int i =0; i<4; i++) {
             if(i==3) cur += sprintf(str_daddr+cur, "%d" ,data->daddr[i]); else cur += sprintf(str_daddr+cur, "%d." ,data->daddr[i]);
         }
-		if(is_server == 1){
+		if(is_server == 1){ // 서버의 경우에만 검증을 수행하도록 구현
         int result = strcmp(str_daddr, str_ip); // 검증
 		if (result == 0) {
             //printf("IP Equal\n");	
@@ -473,7 +473,6 @@ char *L2_receive(int *length)
         // 구현. L1_rev 참고하여 구현
 
         data = (struct L2 *)L3_receive(length); // data는 L3_receive가 리턴한 L2 데이터를 접근하기 위한 L2 struct pointer 변수
-        *length = *length - sizeof(data->daddr) - sizeof(data->length) - sizeof(data->saddr); // 현재 length에서 L2 를 제외한 크기로 갱신(Decapsulation)
 
 		char mac[18]; // 검증을 위해 서버 mac 주소를 담을 변수
 		char str_daddr[18]; // received mac을 문자열 형식으로 담기 위한 변수, 주소 검증시 사용.
@@ -507,7 +506,9 @@ char *L2_receive(int *length)
             }else{
                 printf("daddr is not equal to %s\n",mac); // destination MAC 주소와 서버의 MAC 주소가 동일하지 않은 경우 출력문
             }           
-        } else { return (char *)data->L2_data;}
+        } else {
+            *length = *length - sizeof(data->daddr) - sizeof(data->length) - sizeof(data->saddr); // 현재 length에서 L2 를 제외한 크기로 갱신(Decapsulation)
+            return (char *)data->L2_data;}
     }
 }
 
