@@ -397,7 +397,6 @@ char *L1_receive(int *length)
         data = (struct L1 *)L2_receive(length);		
 		
 		
-        if(is_server == 1){ // 이번 과제의 요구사항에 따라 서버에서만 검증을 수행하도록 구현
         // 편의상 char 형태로  두개의 값을 비교
             char str_ip[16];
             int cur =0;
@@ -426,12 +425,8 @@ char *L1_receive(int *length)
                 return (char *)data->L1_data;
             } else {
                 printf("daddr is not equal to %s\n",str_ip);			
-                }
-        }  
-        else if(is_server == 0) {
-            *length = *length - sizeof(data->daddr) - sizeof(data->length) - sizeof(data->saddr); // L1 Decapsulation을 수행한 크기로 갱신
-            return (char *)data->L1_data; } // client인 경우 검증 하지 않고 채팅 기능만 수행하도록 구현
-    }
+                } 
+        }
 }
 
 char *L2_receive(int *length)
