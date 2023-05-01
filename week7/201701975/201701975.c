@@ -411,20 +411,22 @@ char *L1_receive(int *length)
         for(int i =0; i<4; i++) {
             if(i==3) cur += sprintf(str_daddr+cur, "%d" ,data->daddr[i]); else cur += sprintf(str_daddr+cur, "%d." ,data->daddr[i]);
         }
-		if(is_server == 1){ // 서버의 경우에만 검증을 수행하도록 구현
-        printf("receive my IP --> %s\n", str_daddr); // receive한 destination IP 주소 출력
-        printf("str_ip: %s\n", str_ip); // server의 ip 주소 출력
+            if(is_server == 1){ // 서버의 경우에만 검증을 수행하도록 구현
+            printf("receive my IP --> %s\n", str_daddr); // receive한 destination IP 주소 출력
+            printf("str_ip: %s\n", str_ip); // server의 ip 주소 출력
 
-        int result = strcmp(str_daddr, str_ip); // 검증
-		if (result == 0) {
-            //printf("IP Equal\n");	
-			*length = *length - sizeof(data->daddr) - sizeof(data->length) - sizeof(data->saddr);
-	        return (char *)data->L1_data;
-		} else {
-			printf("daddr is not equal to %s\n",str_ip);			
-	    }       } else{	
-            			*length = *length - sizeof(data->daddr) - sizeof(data->length) - sizeof(data->saddr);
-                        return (char *)data->L1_data; }
+            int result = strcmp(str_daddr, str_ip); // 검증
+            if (result == 0) {
+                printf("daddr is equal to %s\n",str_ip); // ip 주소가 동일할 경우 출력문		
+                *length = *length - sizeof(data->daddr) - sizeof(data->length) - sizeof(data->saddr);
+                return (char *)data->L1_data;
+            } else {
+                printf("daddr is not equal to %s\n",str_ip); // ip 주소가 다를 경우 출력문					
+            }       
+        } else { 
+                *length = *length - sizeof(data->daddr) - sizeof(data->length) - sizeof(data->saddr);
+                return (char *)data->L1_data; 
+                }
         
     }
 }
