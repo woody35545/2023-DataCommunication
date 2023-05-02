@@ -5,50 +5,50 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <arpa/inet.h>
-#include <time.h> //·£´ıÇÔ¼ö¸¦ »ç¿ëÇÏ±â À§ÇÑ Çì´õÆÄÀÏ
+#include <time.h> //ëœë¤í•¨ìˆ˜ë¥¼ ì‚¬ìš©í•˜ê¸° ìœ„í•œ í—¤ë”íŒŒì¼
 
-#define MAX_SIZE 300 //Àü¼ÛÇÒ Data »çÀÌÁî¸¦ 300À¸·Î ¼±¾ğ
+#define MAX_SIZE 300 //ì „ì†¡í•  Data ì‚¬ì´ì¦ˆë¥¼ 300ìœ¼ë¡œ ì„ ì–¸
 
-char saddr_ip_L1[100], daddr_ip_L1[100]; //¹®ÀÚ¿­·Î L1 ÀÇ ½ÃÀÛÁÖ¼Ò¿Í ¸ñÀûÁöÁÖ¼Ò¸¦ ¹Ş±âÀ§ÇÑ ¹è¿­ ¼±¾ğ
-char saddr_ip_L2[100], daddr_ip_L2[100]; //¹®ÀÚ¿­·Î L2 ÀÇ ½ÃÀÛÁÖ¼Ò¿Í ¸ñÀûÁöÁÖ¼Ò¸¦ ¹Ş±âÀ§ÇÑ ¹è¿­ ¼±¾ğ
+char saddr_ip_L1[100], daddr_ip_L1[100]; //ë¬¸ìì—´ë¡œ L1 ì˜ ì‹œì‘ì£¼ì†Œì™€ ëª©ì ì§€ì£¼ì†Œë¥¼ ë°›ê¸°ìœ„í•œ ë°°ì—´ ì„ ì–¸
+char saddr_ip_L2[100], daddr_ip_L2[100]; //ë¬¸ìì—´ë¡œ L2 ì˜ ì‹œì‘ì£¼ì†Œì™€ ëª©ì ì§€ì£¼ì†Œë¥¼ ë°›ê¸°ìœ„í•œ ë°°ì—´ ì„ ì–¸
 int ssock;
 struct sockaddr_in server_addr;
 
 struct L1 {
 	int saddr[6];
-	int daddr[6]; //¸ñÀûÁöÁÖ¼Ò
+	int daddr[6]; //ëª©ì ì§€ì£¼ì†Œ
 	int length;
-	int seq; //seq¸¦ ³ªÅ¸³»´Â º¯¼ö
+	int seq; //seqë¥¼ ë‚˜íƒ€ë‚´ëŠ” ë³€ìˆ˜
 	char L1_data[MAX_SIZE];
-}; //L1 °èÃşÀ» ³ªÅ¸³»´Â ±¸Á¶Ã¼
+}; //L1 ê³„ì¸µì„ ë‚˜íƒ€ë‚´ëŠ” êµ¬ì¡°ì²´
 
 struct L2 {
 	int saddr[4];
 	int daddr[4];
 	int length;
 	char L2_data[MAX_SIZE];
-}; //L2 °èÃşÀ» ³ªÅ¸³»´Â ±¸Á¶Ã¼
+}; //L2 ê³„ì¸µì„ ë‚˜íƒ€ë‚´ëŠ” êµ¬ì¡°ì²´
 
-/*º¸³¾ ¸Ş½ÃÁö¸¦ ¹Ş´Â ÇÔ¼ö ¼±¾ğ*/
+/*ë³´ë‚¼ ë©”ì‹œì§€ë¥¼ ë°›ëŠ” í•¨ìˆ˜ ì„ ì–¸*/
 void L1_send(char *input, int length);
 void L2_send(char *input, int length);
 void L3_send(char *data, int length);
-void setSocket(void); //¼ÒÄÏ »ı¼º
+void setSocket(void); //ì†Œì¼“ ìƒì„±
 
 int main (void){	
-	char input[MAX_SIZE]; //º¸³¾ ¸Ş¼¼Áö
-	int length; //±æÀÌ º¯¼ö
-	int button; //switch¹®À» À§ÇÑ º¯¼ö 
-	setSocket(); //¼ÒÄÏ »ı¼º
+	char input[MAX_SIZE]; //ë³´ë‚¼ ë©”ì„¸ì§€
+	int length; //ê¸¸ì´ ë³€ìˆ˜
+	int button; //switchë¬¸ì„ ìœ„í•œ ë³€ìˆ˜ 
+	setSocket(); //ì†Œì¼“ ìƒì„±
 	while (1) {
-		/*¸Ş´º ¼±ÅÃ¹® */ 
+		/*ë©”ë‰´ ì„ íƒë¬¸ */ 
 		printf("==========Choise Menu===========\n");
 		printf("1. Select L1 address\n");
 		printf("2. Select L2 address\n");
 		printf("3. Send Message\n");
 		scanf("%d", &button);
 
-		//ÀÔ·Â¹ŞÀº °ª¿¡ µû¶ó ³ª´©¾îÁö´Â ºĞ±â¹® 
+		//ì…ë ¥ë°›ì€ ê°’ì— ë”°ë¼ ë‚˜ëˆ„ì–´ì§€ëŠ” ë¶„ê¸°ë¬¸ 
 		switch (button){
 		case  1:
 			__fpurge(stdin);
@@ -58,7 +58,7 @@ int main (void){
 			printf("Input my dest L1 address : ");
 			scanf("%s", daddr_ip_L1);
 			break;
-			//L1ÀÇ ½ÃÀÛ ÁÖ¼Ò¿Í ¸ñÀûÁö ÁÖ¼Ò¸¦ ÀÔ·Â¹Ş´Â ºÎºĞ.
+			//L1ì˜ ì‹œì‘ ì£¼ì†Œì™€ ëª©ì ì§€ ì£¼ì†Œë¥¼ ì…ë ¥ë°›ëŠ” ë¶€ë¶„.
 		case  2:
 			__fpurge(stdin);
 			printf("Input my L2 address : ");
@@ -67,108 +67,108 @@ int main (void){
 			printf("Input my dest L2 address : ");
 			scanf("%s", daddr_ip_L2);
 			break;
-			//L2ÀÇ ½ÃÀÛ ÁÖ¼Ò¿Í ¸ñÀûÁö ÁÖ¼Ò¸¦ ÀÔ·Â¹Ş´Â ºÎºĞ.
+			//L2ì˜ ì‹œì‘ ì£¼ì†Œì™€ ëª©ì ì§€ ì£¼ì†Œë¥¼ ì…ë ¥ë°›ëŠ” ë¶€ë¶„.
 		case  3: 
 			__fpurge(stdin);
 			printf("put the message: ");
 			gets(input);
 			L1_send(input, strlen(input));
-			//Àü¼ÛÇÒ ¹®ÀÚ¸¦ ÀÔ·Â¹Ş´Â ºÎºĞ.
+			//ì „ì†¡í•  ë¬¸ìë¥¼ ì…ë ¥ë°›ëŠ” ë¶€ë¶„.
 			break;
 		default:
 			printf("Error!!!!!!!!!\n");
 			break;
-			//¿¹¿ÜÃ³¸® ±¸¹®
+			//ì˜ˆì™¸ì²˜ë¦¬ êµ¬ë¬¸
 		}
 		if(!strcmp(input,"exit"))
-			break; //ÀÔ·ÂÇÑ ¸Ş½ÃÁö¶û ¡®exit' ºñ±³ÈÄ ¡¯exit' ÀÌ¸é ÇÁ·Î±×·¥ Á¾·á
+			break; //ì…ë ¥í•œ ë©”ì‹œì§€ë‘ â€˜exit' ë¹„êµí›„ â€™exit' ì´ë©´ í”„ë¡œê·¸ë¨ ì¢…ë£Œ
 	}
-	close(ssock); //¼ÒÄÏ ´İÀ½
+	close(ssock); //ì†Œì¼“ ë‹«ìŒ
 }
 
 void L1_send(char *input, int length){
-	struct L1 data; //±¸Á¶Ã¼ º¯¼ö ¼±¾ğ
+	struct L1 data; //êµ¬ì¡°ì²´ ë³€ìˆ˜ ì„ ì–¸
 	char temp[350];
-	int size = 0; //ÃÊ±âÈ­
+	int size = 0; //ì´ˆê¸°í™”
 	int i;
 	char *token;
-	static int seq ; //Á¤Àûº¯¼ö ¼±¾ğ
-	srand((unsigned)time(NULL)); //³­¼öÀÇ seed°ªÀ» ÃÊ±âÈ­
-	seq = rand()%100 + 1; //0ºÎÅÍ 100±îÁöÀÇ ³­¼ö »ı¼º
-	token = strtok(saddr_ip_L1, "-");//¹®ÀÚ¿­¿¡¼­ '-'¸¦ ±âÁØÀ¸·Î ¹®ÀÚ¿­À» ³ª´«´Ù.
+	static int seq ; //ì •ì ë³€ìˆ˜ ì„ ì–¸
+	srand((unsigned)time(NULL)); //ë‚œìˆ˜ì˜ seedê°’ì„ ì´ˆê¸°í™”
+	seq = rand()%100 + 1; //0ë¶€í„° 100ê¹Œì§€ì˜ ë‚œìˆ˜ ìƒì„±
+	token = strtok(saddr_ip_L1, "-");//ë¬¸ìì—´ì—ì„œ '-'ë¥¼ ê¸°ì¤€ìœ¼ë¡œ ë¬¸ìì—´ì„ ë‚˜ëˆˆë‹¤.
 	i = 0;
 
 	while (token != NULL){
 		data.saddr[i] = atoi(token);
 		token = strtok(NULL, "-");
 		i++;
-	} //¹®ÀÚ¿­¿¡¼­ ³ª´« µ¥ÀÌÅÍµéÀ» integer°ªÀ¸·Î º¯È¯ÇÏ¿© L1ÀÇ ½ÃÀÛÁÖ¼Ò¿¡ ÀúÀå
-	token = strtok(daddr_ip_L1, "-"); //¹®ÀÚ¿­¿¡¼­ '-'¸¦ ±âÁØÀ¸·Î ¹®ÀÚ¿­À» ³ª´«´Ù.
+	} //ë¬¸ìì—´ì—ì„œ ë‚˜ëˆˆ ë°ì´í„°ë“¤ì„ integerê°’ìœ¼ë¡œ ë³€í™˜í•˜ì—¬ L1ì˜ ì‹œì‘ì£¼ì†Œì— ì €ì¥
+	token = strtok(daddr_ip_L1, "-"); //ë¬¸ìì—´ì—ì„œ '-'ë¥¼ ê¸°ì¤€ìœ¼ë¡œ ë¬¸ìì—´ì„ ë‚˜ëˆˆë‹¤.
 	i = 0;
 
 	while (token != NULL){
 		data.daddr[i] = atoi(token);
 		token = strtok(NULL, "-");
 		i++;
-	} //¹®ÀÚ¿­¿¡¼­ ³ª´« µ¥ÀÌÅÍµéÀ» integer°ªÀ¸·Î º¯È¯ÇÏ¿© L1ÀÇ ¸ñÀûÁöÁÖ¼Ò¿¡ ÀúÀå
+	} //ë¬¸ìì—´ì—ì„œ ë‚˜ëˆˆ ë°ì´í„°ë“¤ì„ integerê°’ìœ¼ë¡œ ë³€í™˜í•˜ì—¬ L1ì˜ ëª©ì ì§€ì£¼ì†Œì— ì €ì¥
 
-	data.length = length; //¹Ş¾Æ¿Â ±æÀÌ¸¦ µ¥ÀÌÅÍ¿¡ ÀúÀå
-	data.seq = seq; //Àü¼ÛÇÒ seq¸¦ µ¥ÀÌÅÍ¿¡ ÀúÀå.
-	memset(data.L1_data, 0x00, MAX_SIZE); //L1µ¥ÀÌÅÍ ¸Ş¸ğ¸® ÃÊ±âÈ­
-	strcpy (data.L1_data, input); //ÀÔ·ÂÇÑ µ¥ÀÌÅÍ L2¿¡ º¹»ç
-	size = sizeof(struct L1) - sizeof(data.L1_data) + length; //³»°¡ ÀÔ·ÂÇÑ µ¥ÀÌÅÍ±æÀÌ¸¸Å­ »çÀÌÁî ÁöÁ¤
+	data.length = length; //ë°›ì•„ì˜¨ ê¸¸ì´ë¥¼ ë°ì´í„°ì— ì €ì¥
+	data.seq = seq; //ì „ì†¡í•  seqë¥¼ ë°ì´í„°ì— ì €ì¥.
+	memset(data.L1_data, 0x00, MAX_SIZE); //L1ë°ì´í„° ë©”ëª¨ë¦¬ ì´ˆê¸°í™”
+	strcpy (data.L1_data, input); //ì…ë ¥í•œ ë°ì´í„° L2ì— ë³µì‚¬
+	size = sizeof(struct L1) - sizeof(data.L1_data) + length; //ë‚´ê°€ ì…ë ¥í•œ ë°ì´í„°ê¸¸ì´ë§Œí¼ ì‚¬ì´ì¦ˆ ì§€ì •
 
-	memset(temp, 0x00, 350); //tempÀÇ ¸Ş¸ğ¸®¸¦ 350¸¸Å­ 0À¸·Î ÃÊ±âÈ­  
-	memcpy(temp, (void *)&data, size); //À§¿¡¼­ ±¸ÇÑ size¸¸Å­ µ¥ÀÌÅÍ¸¦ tempº¹»ç
-	L2_send(temp, size); //temp ÀÇ data¸¦ L2·Î º¸³¿
-	printf ("Sender_sequence  : %d\n", data.seq); //sequence °ª Ãâ·Â
+	memset(temp, 0x00, 350); //tempì˜ ë©”ëª¨ë¦¬ë¥¼ 350ë§Œí¼ 0ìœ¼ë¡œ ì´ˆê¸°í™”  
+	memcpy(temp, (void *)&data, size); //ìœ„ì—ì„œ êµ¬í•œ sizeë§Œí¼ ë°ì´í„°ë¥¼ tempë³µì‚¬
+	L2_send(temp, size); //temp ì˜ dataë¥¼ L2ë¡œ ë³´ëƒ„
+	printf ("Sender_sequence  : %d\n", data.seq); //sequence ê°’ ì¶œë ¥
 }
 
 void L2_send(char *input, int length){
-	struct L2 data; //±¸Á¶Ã¼ º¯¼ö ¼±¾ğ
+	struct L2 data; //êµ¬ì¡°ì²´ ë³€ìˆ˜ ì„ ì–¸
 	char temp[350];
-	int size = 0; //ÃÊ±âÈ­
+	int size = 0; //ì´ˆê¸°í™”
 	int i;
 	char *token;
-	token = strtok(saddr_ip_L2, "."); //¹®ÀÚ¿­¿¡¼­ '.'¸¦ ±âÁØÀ¸·Î ¹®ÀÚ¿­À» ³ª´«´Ù.
+	token = strtok(saddr_ip_L2, "."); //ë¬¸ìì—´ì—ì„œ '.'ë¥¼ ê¸°ì¤€ìœ¼ë¡œ ë¬¸ìì—´ì„ ë‚˜ëˆˆë‹¤.
 	i = 0;
 
 	while (token != NULL){
 		data.saddr[i] = atoi(token);
 		token = strtok(NULL, ".");
 		i++;
-	} //¹®ÀÚ¿­¿¡¼­ ³ª´« µ¥ÀÌÅÍµéÀ» integer°ªÀ¸·Î º¯È¯ÇÏ¿© L2ÀÇ ½ÃÀÛÁÖ¼Ò¿¡ ÀúÀå
+	} //ë¬¸ìì—´ì—ì„œ ë‚˜ëˆˆ ë°ì´í„°ë“¤ì„ integerê°’ìœ¼ë¡œ ë³€í™˜í•˜ì—¬ L2ì˜ ì‹œì‘ì£¼ì†Œì— ì €ì¥
 
-	token = strtok(daddr_ip_L2, "."); //¹®ÀÚ¿­¿¡¼­ '.'¸¦ ±âÁØÀ¸·Î ¹®ÀÚ¿­À» ³ª´«´Ù.
+	token = strtok(daddr_ip_L2, "."); //ë¬¸ìì—´ì—ì„œ '.'ë¥¼ ê¸°ì¤€ìœ¼ë¡œ ë¬¸ìì—´ì„ ë‚˜ëˆˆë‹¤.
 	i = 0;
 
 	while (token != NULL){
 		data.daddr[i] = atoi(token);
 		token = strtok(NULL, ".");
 		i++;
-	} //¹®ÀÚ¿­¿¡¼­ ³ª´« µ¥ÀÌÅÍµéÀ» integer°ªÀ¸·Î º¯È¯ÇÏ¿© L2ÀÇ ¸ñÀûÁöÁÖ¼Ò¿¡ ÀúÀå
+	} //ë¬¸ìì—´ì—ì„œ ë‚˜ëˆˆ ë°ì´í„°ë“¤ì„ integerê°’ìœ¼ë¡œ ë³€í™˜í•˜ì—¬ L2ì˜ ëª©ì ì§€ì£¼ì†Œì— ì €ì¥
 
-	data.length = length; //¹Ş¾Æ¿Â ±æÀÌ¸¦ µ¥ÀÌÅÍ¿¡ ÀúÀå
-	memset(data.L2_data, 0x00, MAX_SIZE); //L1µ¥ÀÌÅÍ ¸Ş¸ğ¸® ÃÊ±âÈ­
-	memcpy (data.L2_data, (void *)input, length); //ÀÔ·ÂÇÑ µ¥ÀÌÅÍ L1¿¡ º¹»ç
+	data.length = length; //ë°›ì•„ì˜¨ ê¸¸ì´ë¥¼ ë°ì´í„°ì— ì €ì¥
+	memset(data.L2_data, 0x00, MAX_SIZE); //L1ë°ì´í„° ë©”ëª¨ë¦¬ ì´ˆê¸°í™”
+	memcpy (data.L2_data, (void *)input, length); //ì…ë ¥í•œ ë°ì´í„° L1ì— ë³µì‚¬
 
-	size = sizeof(struct L2) - sizeof(data.L2_data) + length; //³»°¡ ÀÔ·ÂÇÑ µ¥ÀÌÅÍ±æÀÌ¸¸Å­ »çÀÌÁî ÁöÁ¤
-	memset(temp, 0x00, 350); //tempÀÇ ¸Ş¸ğ¸®¸¦ 350¸¸Å­ 0À¸·Î ÃÊ±âÈ­
-	memcpy(temp, (void *)&data, size); //À§¿¡¼­ ±¸ÇÑ size¸¸Å­ µ¥ÀÌÅÍ¸¦ tempº¹»ç
-	L3_send(temp,size); //temp ÀÇ data¸¦ L3·Î º¸³¿
+	size = sizeof(struct L2) - sizeof(data.L2_data) + length; //ë‚´ê°€ ì…ë ¥í•œ ë°ì´í„°ê¸¸ì´ë§Œí¼ ì‚¬ì´ì¦ˆ ì§€ì •
+	memset(temp, 0x00, 350); //tempì˜ ë©”ëª¨ë¦¬ë¥¼ 350ë§Œí¼ 0ìœ¼ë¡œ ì´ˆê¸°í™”
+	memcpy(temp, (void *)&data, size); //ìœ„ì—ì„œ êµ¬í•œ sizeë§Œí¼ ë°ì´í„°ë¥¼ tempë³µì‚¬
+	L3_send(temp,size); //temp ì˜ dataë¥¼ L3ë¡œ ë³´ëƒ„
 }
 
 void L3_send(char *data, int length){
 	char temp[300];
-	memset(temp, 0x00, MAX_SIZE); //tempÀÇ ¸Ş¸ğ¸®¸¦ 350¸¸Å­ 0À¸·Î ÃÊ±âÈ­
-	memcpy (temp, (void *)data, length); //À§¿¡¼­ ±¸ÇÑ size¸¸Å­ µ¥ÀÌÅÍ¸¦ tempº¹»ç
+	memset(temp, 0x00, MAX_SIZE); //tempì˜ ë©”ëª¨ë¦¬ë¥¼ 350ë§Œí¼ 0ìœ¼ë¡œ ì´ˆê¸°í™”
+	memcpy (temp, (void *)data, length); //ìœ„ì—ì„œ êµ¬í•œ sizeë§Œí¼ ë°ì´í„°ë¥¼ tempë³µì‚¬
 	if(sendto (ssock, temp, length, 0, (struct sockaddr *)&server_addr,sizeof(server_addr)) <= 0){
 		perror("write error : ");
 		exit(1);
 	}
 }
 
-void setSocket(){ //¼ÒÄÏ »ı¼º 
+void setSocket(){ //ì†Œì¼“ ìƒì„± 
 	if((ssock=socket(PF_INET,SOCK_DGRAM,IPPROTO_UDP)) < 0) {
 		perror("socket error : ");
 		exit(1);

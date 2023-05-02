@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pcap.h> // packet capture api
-// ARP ÆĞÅ¶ Ä¸Ã³ÈÄ ÆĞÅ¶ ±¸Á¶ È®ÀÎÀ» À§ÇÑ ÆÄÀÏÀÔ´Ï´Ù. (µ¥ÀÌÅÍ Åë½Å ½Ç½À½Ã°£)
-// ARP Çì´õ Á¤ÀÇÈÄ ÀÚ½ÅÀÇ ³×Æ®¿öÅ© »óÀÇ ARP ÆĞÅ¶À» Ä¸Ã³ÇÏ¿© µ¥ÀÌÅÍ¸¦ È®ÀÎÇØº¾´Ï´Ù.
+// ARP íŒ¨í‚· ìº¡ì²˜í›„ íŒ¨í‚· êµ¬ì¡° í™•ì¸ì„ ìœ„í•œ íŒŒì¼ì…ë‹ˆë‹¤. (ë°ì´í„° í†µì‹  ì‹¤ìŠµì‹œê°„)
+// ARP í—¤ë” ì •ì˜í›„ ìì‹ ì˜ ë„¤íŠ¸ì›Œí¬ ìƒì˜ ARP íŒ¨í‚·ì„ ìº¡ì²˜í•˜ì—¬ ë°ì´í„°ë¥¼ í™•ì¸í•´ë´…ë‹ˆë‹¤.
 struct ether_addr {
   unsigned char mac_add[6];  
 };
@@ -11,53 +11,53 @@ struct ether_addr {
 struct ether_header {
     struct ether_addr etherdst_mac; 
     struct ether_addr ethersed_mac; 
-    unsigned short ether_type; // ARPÀÎÁö È®ÀÎ ÇÒ ¼ö ÀÖ´Â ºÎºĞ 0x0806=ARP 0x0800=IP // short=2byte
+    unsigned short ether_type; // ARPì¸ì§€ í™•ì¸ í•  ìˆ˜ ìˆëŠ” ë¶€ë¶„ 0x0806=ARP 0x0800=IP // short=2byte
 };
 
-#pragma pack(push, 2)  // ±¸Á¶Ã¼ Å©±â Á¤·ÄÇÏ±â = 2¹ÙÀÌÆ® ´ÜÀ§·Î ¸Ş¸ğ¸® ³¶ºñ¾øÀÌ ÀúÀåÇÏ±â À§ÇÔ.
+#pragma pack(push, 2)  // êµ¬ì¡°ì²´ í¬ê¸° ì •ë ¬í•˜ê¸° = 2ë°”ì´íŠ¸ ë‹¨ìœ„ë¡œ ë©”ëª¨ë¦¬ ë‚­ë¹„ì—†ì´ ì €ì¥í•˜ê¸° ìœ„í•¨.
 struct arp_header {
-    unsigned short hw_type; // »ç¿ë °¡´ÉÇÑ ÀüÃ¼ ¹°¸®ÁÖ¼Ò(MAC) À¯Çü
-    unsigned short protocol_type; // »ç¿ëÁßÀÎ ÇÁ·ÎÅäÄİ ÁÖ¼Ò 
-    unsigned char hw_addr_len; // ÆĞÅ¶¿¡ »ç¿ëµÇ´Â MAC ±æÀÌ
-    unsigned char protocol_addr_len; // ÆĞÅ¶¿¡ »ç¿ëµÇ´Â IP ÁÖ¼Ò ±æÀÌ
-    unsigned short operation_code; // ¿äÃ»(1) ¶Ç´Â ÀÀ´ä(2)
-    struct ether_addr source_mac; // Sender L2 °èÃşÀÇ ¹°¸®ÁÖ¼Ò
-    struct in_addr source_ip; // Sender L3 °èÃşÀÇ ³í¸® ÁÖ¼Ò 
-    struct ether_addr destination_mac; // Receiver L2 ÁÖ¼Ò
-    struct in_addr destination_ip; // Receiver L3 ³í¸® ÁÖ¼Ò
+    unsigned short hw_type; // ì‚¬ìš© ê°€ëŠ¥í•œ ì „ì²´ ë¬¼ë¦¬ì£¼ì†Œ(MAC) ìœ í˜•
+    unsigned short protocol_type; // ì‚¬ìš©ì¤‘ì¸ í”„ë¡œí† ì½œ ì£¼ì†Œ 
+    unsigned char hw_addr_len; // íŒ¨í‚·ì— ì‚¬ìš©ë˜ëŠ” MAC ê¸¸ì´
+    unsigned char protocol_addr_len; // íŒ¨í‚·ì— ì‚¬ìš©ë˜ëŠ” IP ì£¼ì†Œ ê¸¸ì´
+    unsigned short operation_code; // ìš”ì²­(1) ë˜ëŠ” ì‘ë‹µ(2)
+    struct ether_addr source_mac; // Sender L2 ê³„ì¸µì˜ ë¬¼ë¦¬ì£¼ì†Œ
+    struct in_addr source_ip; // Sender L3 ê³„ì¸µì˜ ë…¼ë¦¬ ì£¼ì†Œ 
+    struct ether_addr destination_mac; // Receiver L2 ì£¼ì†Œ
+    struct in_addr destination_ip; // Receiver L3 ë…¼ë¦¬ ì£¼ì†Œ
 };
 #pragma pack(pop)
 
-// ÇÔ¼ö ¼±¾ğ
+// í•¨ìˆ˜ ì„ ì–¸
 void print_ether_header(const unsigned char *pkt_data);
 void print_arp_header(const unsigned char *pkt_data);
 
 // main
 int main() {
-  pcap_if_t *alldevs;   // Æ÷ÀÎÅÍ alldevsÀÇ ÀÚ·áÇüÀº pcap_if_t
+  pcap_if_t *alldevs;   // í¬ì¸í„° alldevsì˜ ìë£Œí˜•ì€ pcap_if_t
   pcap_if_t *d;
   int inum,res,i=0;
-  struct pcap_pkthdr *header;  //pcap_pkthdr ±¸Á¶Ã¼ : 
-  const unsigned char *pkt_data;  //ÆĞÅ¶À» ÀúÀåÇÒ °ø°£
+  struct pcap_pkthdr *header;  //pcap_pkthdr êµ¬ì¡°ì²´ : 
+  const unsigned char *pkt_data;  //íŒ¨í‚·ì„ ì €ì¥í•  ê³µê°„
   pcap_t *adhandle;
   char errbuf[PCAP_ERRBUF_SIZE];
-  char packet_filter[] = ""; // »ç¿ëÀÚ°¡ ¿øÇÏ´Â ÇÁ·ÎÅäÄİ ÇÊÅÍ Á¤º¸¸¦ ³ÖÀ» ¼ö ÀÖ´Â °ø°£
-  struct bpf_program fcode; // Æ¯Á¤ ÇÁ·ÎÅäÄİ¸¸À» Ä¸ÃÄÇÏ±â À§ÇÑ Á¤Ã¥Á¤º¸ ÀúÀå
+  char packet_filter[] = ""; // ì‚¬ìš©ìê°€ ì›í•˜ëŠ” í”„ë¡œí† ì½œ í•„í„° ì •ë³´ë¥¼ ë„£ì„ ìˆ˜ ìˆëŠ” ê³µê°„
+  struct bpf_program fcode; // íŠ¹ì • í”„ë¡œí† ì½œë§Œì„ ìº¡ì³í•˜ê¸° ìœ„í•œ ì •ì±…ì •ë³´ ì €ì¥
 
-  // alldevs ¿¡ µğ¹ÙÀÌ½º ¸ñ·Ï ÀúÀå,¿¡·¯½Ã errbuf¿¡ ¿¡·¯ÀúÀå
+  // alldevs ì— ë””ë°”ì´ìŠ¤ ëª©ë¡ ì €ì¥,ì—ëŸ¬ì‹œ errbufì— ì—ëŸ¬ì €ì¥
   if(pcap_findalldevs(&alldevs, errbuf) == -1) {   
     printf("Error in pcap_findalldevs: %s\n", errbuf);
     exit(1);
   }
 
-  for(d=alldevs; d; d=d->next) {  //³×Æ®¿öÆ® µğ¹ÙÀÌ½º Á¤º¸¸¦ Ãâ·Â
+  for(d=alldevs; d; d=d->next) {  //ë„¤íŠ¸ì›ŒíŠ¸ ë””ë°”ì´ìŠ¤ ì •ë³´ë¥¼ ì¶œë ¥
     printf("%d. %s", ++i, d->name);
     if (d->description)
       printf(" (%s)\n", d->description);
     else
       printf(" (No description available)\n");
   }
-  //µğ¹ÙÀÌ½º ¸øÃ£À» °æ¿ì ¿¡·¯
+  //ë””ë°”ì´ìŠ¤ ëª»ì°¾ì„ ê²½ìš° ì—ëŸ¬
   if(i==0) {   
     printf("\nNo interfaces found! Make sure LiPcap is installed.\n");
     //return -1;
@@ -65,39 +65,39 @@ int main() {
 
   printf("Enter the interface number (1-%d):",i);
   scanf("%d", &inum);
-  //ÀÔ·ÂÇÑ °ªÀÌ ¿Ã¹Ù¸¥Áö ÆÇ´Ü && : µÑ´Ù ÂüÀÌ¾î¾ß Âü
+  //ì…ë ¥í•œ ê°’ì´ ì˜¬ë°”ë¥¸ì§€ íŒë‹¨ && : ë‘˜ë‹¤ ì°¸ì´ì–´ì•¼ ì°¸
   if(inum < 1 || inum > i) {  
     printf("\nAdapter number out of range.\n");
     pcap_freealldevs(alldevs);  
     return -1;
   }
-  //»ç¿ëÀÚ°¡ ¼±ÅÃÇÑ ÀåÄ¡ ¸ñ·ÏÀ» ¼±ÅÃ
+  //ì‚¬ìš©ìê°€ ì„ íƒí•œ ì¥ì¹˜ ëª©ë¡ì„ ì„ íƒ
   for(d=alldevs, i=0; i< inum-1 ;d=d->next, i++);   
 
-  //½ÇÁ¦ ³×Æ®¿öÅ© µğ¹ÙÀÌ½º ¿ÀÇÂ
+  //ì‹¤ì œ ë„¤íŠ¸ì›Œí¬ ë””ë°”ì´ìŠ¤ ì˜¤í”ˆ
   if((adhandle= pcap_open_live(d->name, 65536,   1,  1000,  errbuf  )) == NULL) {   
     printf("\nUnable to open the adapter. %s is not supported by pcap\n", d->name);
     pcap_freealldevs(alldevs);
     return -1;
   }
  
- //ÆĞÅ¶ ÇÊÅÍ¸µ Á¤Ã¥À» À§ÇØ pcap_compile()ÇÔ¼ö È£Ãâ 
- //»ç¿ëÀÚ°¡ Á¤ÀÇÇÑ ÇÊÅÍ¸µ ·êÀ» bpf_program ±¸Á¶Ã¼¿¡ ÀúÀåÇÏ¿© Æ¯Á¤ ÇÁ·ÎÅäÄİ ÆĞÅ¶¸¸ ¼öÁı
+ //íŒ¨í‚· í•„í„°ë§ ì •ì±…ì„ ìœ„í•´ pcap_compile()í•¨ìˆ˜ í˜¸ì¶œ 
+ //ì‚¬ìš©ìê°€ ì •ì˜í•œ í•„í„°ë§ ë£°ì„ bpf_program êµ¬ì¡°ì²´ì— ì €ì¥í•˜ì—¬ íŠ¹ì • í”„ë¡œí† ì½œ íŒ¨í‚·ë§Œ ìˆ˜ì§‘
   if (pcap_compile(adhandle, &fcode, packet_filter, 1, 0) <0 )  { 
     printf("\nUnable to compile the packet filter. Check the syntax.\n");
     pcap_freealldevs(alldevs);
     return -1;
   }
 
-  //pcap_compile() ÇÔ¼ö³»¿ëÀ» Àû¿ëÇÏ±â À§ÇØ  pcap_setfilter() ÇÔ¼ö°¡ »ç¿ëµÈ´Ù.
+  //pcap_compile() í•¨ìˆ˜ë‚´ìš©ì„ ì ìš©í•˜ê¸° ìœ„í•´  pcap_setfilter() í•¨ìˆ˜ê°€ ì‚¬ìš©ëœë‹¤.
   if (pcap_setfilter(adhandle, &fcode)<0)  {  
     printf("\nError setting the filter.\n");
     pcap_freealldevs(alldevs);
     return -1;
   }
-  // µğ¹ÙÀÌ½º Á¤º¸ Ãâ·Â
+  // ë””ë°”ì´ìŠ¤ ì •ë³´ ì¶œë ¥
   printf("\nlistening on %s...\n", d->name);    
-  pcap_freealldevs(alldevs);   // ÇØÁ¦
+  pcap_freealldevs(alldevs);   // í•´ì œ
 
     while ((res = pcap_next_ex(adhandle, &header, &pkt_data)) >= 0) {
         if (res == 0) continue;
@@ -109,14 +109,14 @@ int main() {
   return 0;
 }
 
-// ÀÌ´õ³İ Á¤º¸¸¦ Ãâ·ÂÇÔ
+// ì´ë”ë„· ì •ë³´ë¥¼ ì¶œë ¥í•¨
 void print_ether_header(const unsigned char *pkt_data) {  
 
-    struct ether_header *eth; //ÀÌ´õ³İ Çì´õ Á¤º¸¸¦ ´ãÀ» ¼ö ÀÖ´Â °ø°£ÀÇ ÀÌ´õÇì´õÀÇ ±¸Á¶Ã¼¸¦ eth·Î ÁöÁ¤
-    eth = (struct ether_header *)pkt_data;  // ±¸Á¶Ã¼ eth¿¡ ÆĞÅ¶ Á¤º¸¸¦ ÀúÀå
+    struct ether_header *eth; //ì´ë”ë„· í—¤ë” ì •ë³´ë¥¼ ë‹´ì„ ìˆ˜ ìˆëŠ” ê³µê°„ì˜ ì´ë”í—¤ë”ì˜ êµ¬ì¡°ì²´ë¥¼ ethë¡œ ì§€ì •
+    eth = (struct ether_header *)pkt_data;  // êµ¬ì¡°ì²´ ethì— íŒ¨í‚· ì •ë³´ë¥¼ ì €ì¥
     unsigned short eth_type;
-    eth_type= ntohs(eth->ether_type);  // ÀÎÀÚ·Î ¹ŞÀº °ªÀ» ¸®Æ² ¿£µğ¾È Çü½ÄÀ¸·Î ¹Ù²Ù¾îÁÜ
-    // ARP ÆĞÅ¶ÀÎ ºÎºĞ¸¸ Ä¸Ã³
+    eth_type= ntohs(eth->ether_type);  // ì¸ìë¡œ ë°›ì€ ê°’ì„ ë¦¬í‹€ ì—”ë””ì•ˆ í˜•ì‹ìœ¼ë¡œ ë°”ê¾¸ì–´ì¤Œ
+    // ARP íŒ¨í‚·ì¸ ë¶€ë¶„ë§Œ ìº¡ì²˜
     if (eth_type == 0x0806) {
         printf("\n====== ARP packet ======\n");
         printf("\nSrc MAC : ");
@@ -128,7 +128,7 @@ void print_ether_header(const unsigned char *pkt_data) {
         printf("\n");
     }
 }
-// ARP ÆĞÅ¶ Á¤º¸¸¦ Ãâ·Â
+// ARP íŒ¨í‚· ì •ë³´ë¥¼ ì¶œë ¥
 void print_arp_header(const unsigned char *pkt_data) {  
 
     struct arp_header *arprqip;
@@ -139,12 +139,12 @@ void print_arp_header(const unsigned char *pkt_data) {
     arprpip = (struct arp_header *)pkt_data;
     arpmac = (struct arp_header *)pkt_data;
     arpop = (struct arp_header *)pkt_data;
-    unsigned short arp_op_code = ntohs(arpop -> operation_code);  // ÀÎÀÚ·Î ¹ŞÀº °ªÀ» short Çü½ÄÀ¸·Î ¹Ù²Ù¾îÁÜ
-	unsigned short pro_type = ntohs(arpop -> protocol_type);  // ÀÎÀÚ·Î ¹ŞÀº °ªÀ» short Çü½ÄÀ¸·Î ¹Ù²Ù¾îÁÜ	
+    unsigned short arp_op_code = ntohs(arpop -> operation_code);  // ì¸ìë¡œ ë°›ì€ ê°’ì„ short í˜•ì‹ìœ¼ë¡œ ë°”ê¾¸ì–´ì¤Œ
+	unsigned short pro_type = ntohs(arpop -> protocol_type);  // ì¸ìë¡œ ë°›ì€ ê°’ì„ short í˜•ì‹ìœ¼ë¡œ ë°”ê¾¸ì–´ì¤Œ	
     // request = 1
     if (arp_op_code == 0x0001) {  
         printf(" ******* request ******* \n");
-        printf(" Sender IP : %s\n ", inet_ntoa(arprqip -> source_ip));  // ¹ÙÀÌÆ® ¼ø¼­ÀÇ 32ºñÆ® °ªÀ» ÁÖ¼Ò°ªÀ¸·Î º¯È¯ÇÏ±â À§ÇÔ(in_addr ÇÊ¿ä)
+        printf(" Sender IP : %s\n ", inet_ntoa(arprqip -> source_ip));  // ë°”ì´íŠ¸ ìˆœì„œì˜ 32ë¹„íŠ¸ ê°’ì„ ì£¼ì†Œê°’ìœ¼ë¡œ ë³€í™˜í•˜ê¸° ìœ„í•¨(in_addr í•„ìš”)
         printf("Target IP : %s\n ", inet_ntoa(arprqip -> destination_ip));
 		printf("pro_type : %d, hw_addr_len : %d, protocol_addr_len : %d \n",pro_type, arpop -> hw_addr_len,arpop -> protocol_addr_len);
         printf("\n");
@@ -154,7 +154,7 @@ void print_arp_header(const unsigned char *pkt_data) {
         printf(" ********  reply  ******** \n");
         printf(" Sender IP  : %s\n ", inet_ntoa(arprpip -> source_ip));
         printf("Sender MAC : ");
-			for (int i=0; i <=5; i ++) printf("%02x:",arpmac -> source_mac.mac_add[i]); // ¾îµğ¼­ ¸¹ÀÌ ºÃ´ø Ãâ·Â¹®...
+			for (int i=0; i <=5; i ++) printf("%02x:",arpmac -> source_mac.mac_add[i]); // ì–´ë””ì„œ ë§ì´ ë´¤ë˜ ì¶œë ¥ë¬¸...
         printf("\n");
         printf(" Target IP  : %s\n ", inet_ntoa(arprpip -> destination_ip));
         printf("Target MAC : ");

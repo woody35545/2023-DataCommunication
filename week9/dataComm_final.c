@@ -282,9 +282,9 @@ void L2_send(char *input, int length)
         }
         else
         {
-            struct L1 *tempL1 = (struct L1 *)input; // L1 µ¥ÀÌÅÍ º¹»ç¿ë
-            struct Addr *tempAddr = (struct Addr *)tempL1->L1_data;  // L1 µ¥ÀÌÅÍ ÁÖ¼Ò °¡Á®¿À±â
-            memcpy(addrData.ip, tempAddr->ip, sizeof(addrData.ip));  //size¸¸Å­ µ¥ÀÌÅÍ¸¦ addrData.ip¿¡ º¹»ç
+            struct L1 *tempL1 = (struct L1 *)input; // L1 ë°ì´í„° ë³µì‚¬ìš©
+            struct Addr *tempAddr = (struct Addr *)tempL1->L1_data;  // L1 ë°ì´í„° ì£¼ì†Œ ê°€ì ¸ì˜¤ê¸°
+            memcpy(addrData.ip, tempAddr->ip, sizeof(addrData.ip));  //sizeë§Œí¼ ë°ì´í„°ë¥¼ addrData.ipì— ë³µì‚¬
 
             unsigned char mac[] = {0x00, 0x10, 0x00, 0x0A, 0x00, 0x00};
             printf("[%s] my MAC --> ", __func__);
@@ -315,11 +315,11 @@ void L2_send(char *input, int length)
             
             data.length = length;
 
-            memset(tempL1->L1_data, 0x00, MAX_SIZE);  //L1µ¥ÀÌÅÍ ¸Ş¸ğ¸® ÃÊ±âÈ­
-            memcpy(tempL1->L1_data, (void *)&addrData, sizeof(struct Addr));   //ÁÖ¼Ò µ¥ÀÌÅÍ L1¿¡ º¹»ç 
+            memset(tempL1->L1_data, 0x00, MAX_SIZE);  //L1ë°ì´í„° ë©”ëª¨ë¦¬ ì´ˆê¸°í™”
+            memcpy(tempL1->L1_data, (void *)&addrData, sizeof(struct Addr));   //ì£¼ì†Œ ë°ì´í„° L1ì— ë³µì‚¬ 
             
-            memset(data.L2_data, 0x00, MAX_SIZE); //¸Ş¸ğ¸® ÃÊ±âÈ­
-            memcpy(data.L2_data, (void *)tempL1, length); // µ¥ÀÌÅÍ º¹»ç
+            memset(data.L2_data, 0x00, MAX_SIZE); //ë©”ëª¨ë¦¬ ì´ˆê¸°í™”
+            memcpy(data.L2_data, (void *)tempL1, length); // ë°ì´í„° ë³µì‚¬
 
             size = sizeof(struct L2) - sizeof(data.L2_data) + length;
 

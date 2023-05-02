@@ -5,77 +5,77 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <arpa/inet.h>
-#define MAX_SIZE 300 //Àü¼ÛÇÒ Data »çÀÌÁî¸¦ 300À¸·Î ¼±¾ğ
-/*Flag¿¡¼­ »ç¿ëÇÒ ¸ŞÅ©·Î º¯¼ö*/
+#define MAX_SIZE 300 //ì „ì†¡í•  Data ì‚¬ì´ì¦ˆë¥¼ 300ìœ¼ë¡œ ì„ ì–¸
+/*Flagì—ì„œ ì‚¬ìš©í•  ë©”í¬ë¡œ ë³€ìˆ˜*/
 
 #define PASS		0 
 #define L1_FAIL		1
 #define L2_FAIL 	2
 #define L1_L2_FAIL	3
 
-int ssock; //¼ÒÄÏ º¯¼ö
-int clen; //sender ÁÖ¼ÒÀÇ Å©±â	
-int Error_Flag; // sender¿Í receiveÀÇ ¸ñÀûÁö ÁÖ¼Ò¸¦ ºñ±³ÇÏ¿© ´Ù¸¥ ºÎºĞÀÌ ¾îµòÁö ¾Ë·ÁÁÖ´Â º¯¼ö
-struct sockaddr_in server_addr; //¼ÒÄÏÇÁ·Î±×·¥¿¡ ³»ÀåµÈ ±¸Á¶Ã¼
+int ssock; //ì†Œì¼“ ë³€ìˆ˜
+int clen; //sender ì£¼ì†Œì˜ í¬ê¸°	
+int Error_Flag; // senderì™€ receiveì˜ ëª©ì ì§€ ì£¼ì†Œë¥¼ ë¹„êµí•˜ì—¬ ë‹¤ë¥¸ ë¶€ë¶„ì´ ì–´ë”˜ì§€ ì•Œë ¤ì£¼ëŠ” ë³€ìˆ˜
+struct sockaddr_in server_addr; //ì†Œì¼“í”„ë¡œê·¸ë¨ì— ë‚´ì¥ëœ êµ¬ì¡°ì²´
 
 struct L1 {
-	int saddr[6]; //L1°èÃş ¼Ò½º ¾îµå·¹½º
-	int daddr[6]; //L1°èÃş ¸ñÀûÁö ÁÖ¼Ò
-	int length; //±æÀÌ ³ªÅ¸³»´Â º¯¼ö
-	int seq; //seq¸¦ ³ªÅ¸³»´Â º¯¼ö
-	char L1_data[MAX_SIZE]; //L1 °èÃş¿¡ º¸³¾ ¸Ş½ÃÁö ÀúÀå
-}; //L1 °èÃşÀ» ³ªÅ¸³»´Â ±¸Á¶Ã¼
+	int saddr[6]; //L1ê³„ì¸µ ì†ŒìŠ¤ ì–´ë“œë ˆìŠ¤
+	int daddr[6]; //L1ê³„ì¸µ ëª©ì ì§€ ì£¼ì†Œ
+	int length; //ê¸¸ì´ ë‚˜íƒ€ë‚´ëŠ” ë³€ìˆ˜
+	int seq; //seqë¥¼ ë‚˜íƒ€ë‚´ëŠ” ë³€ìˆ˜
+	char L1_data[MAX_SIZE]; //L1 ê³„ì¸µì— ë³´ë‚¼ ë©”ì‹œì§€ ì €ì¥
+}; //L1 ê³„ì¸µì„ ë‚˜íƒ€ë‚´ëŠ” êµ¬ì¡°ì²´
 
 struct L2 {
-	int saddr[4]; //L2°èÃş ¼Ò½º ¾îµå·¹½º
-	int daddr[4]; //L2°èÃş ¸ñÀûÁö ¾îµå·¹½º
-	int length; //±æÀÌ ³ªÅ¸³»´Â º¯¼ö
-	char L2_data[MAX_SIZE]; //L1 °èÃş¿¡ º¸³¾ ¸Ş½ÃÁö ÀúÀå
-}; //L1 °èÃşÀ» ³ªÅ¸³»´Â ±¸Á¶Ã¼
-struct L1 L1_Data; //L1°èÃşÀÇ ½ÃÀÛÁÖ¼Ò¿Í ¸ñÀûÁöÁÖ¼Ò¸¦ ºñ±³ÇÏ±â À§ÇÑ ±¸Á¶Ã¼ ¼±¾ğ
-struct L2 L2_Data; //L2°èÃşÀÇ ½ÃÀÛÁÖ¼Ò¿Í ¸ñÀûÁöÁÖ¼Ò¸¦ ºñ±³ÇÏ±â À§ÇÑ ±¸Á¶Ã¼ ¼±¾ğ
-/*¼­¹ö·ÎºÎÅÍ ¹ŞÀº ¸Ş½ÃÁö¸¦ °¢ °èÃşº°·Î ¹Ş¾Æ¼­ Ç®¾î³ª°¡´Â ÇÔ¼ö ¼±¾ğ*/
+	int saddr[4]; //L2ê³„ì¸µ ì†ŒìŠ¤ ì–´ë“œë ˆìŠ¤
+	int daddr[4]; //L2ê³„ì¸µ ëª©ì ì§€ ì–´ë“œë ˆìŠ¤
+	int length; //ê¸¸ì´ ë‚˜íƒ€ë‚´ëŠ” ë³€ìˆ˜
+	char L2_data[MAX_SIZE]; //L1 ê³„ì¸µì— ë³´ë‚¼ ë©”ì‹œì§€ ì €ì¥
+}; //L1 ê³„ì¸µì„ ë‚˜íƒ€ë‚´ëŠ” êµ¬ì¡°ì²´
+struct L1 L1_Data; //L1ê³„ì¸µì˜ ì‹œì‘ì£¼ì†Œì™€ ëª©ì ì§€ì£¼ì†Œë¥¼ ë¹„êµí•˜ê¸° ìœ„í•œ êµ¬ì¡°ì²´ ì„ ì–¸
+struct L2 L2_Data; //L2ê³„ì¸µì˜ ì‹œì‘ì£¼ì†Œì™€ ëª©ì ì§€ì£¼ì†Œë¥¼ ë¹„êµí•˜ê¸° ìœ„í•œ êµ¬ì¡°ì²´ ì„ ì–¸
+/*ì„œë²„ë¡œë¶€í„° ë°›ì€ ë©”ì‹œì§€ë¥¼ ê° ê³„ì¸µë³„ë¡œ ë°›ì•„ì„œ í’€ì–´ë‚˜ê°€ëŠ” í•¨ìˆ˜ ì„ ì–¸*/
 char *L1_receive(int *);
 char *L2_receive(int *);
 char *L3_receive(int *);
 
-void setSocket(void); //¼ÒÄÏ»ı¼º ÇÔ¼ö
+void setSocket(void); //ì†Œì¼“ìƒì„± í•¨ìˆ˜
 
 int main (void){
-	char output[MAX_SIZE]; //µé¾î¿Ã ¸Ş¼¼Áö
-	int length; //±æÀÌ º¯¼ö
-	setSocket(); //¼ÒÄÏ»ı¼ºÇÔ¼ö
+	char output[MAX_SIZE]; //ë“¤ì–´ì˜¬ ë©”ì„¸ì§€
+	int length; //ê¸¸ì´ ë³€ìˆ˜
+	setSocket(); //ì†Œì¼“ìƒì„±í•¨ìˆ˜
 	while (1) {
-		strcpy(output, L1_receive(&length)); //µé¾î¿Ã ¸Ş½ÃÁö º¹»ç ÈÄ ÀúÀå		
-		output[length] = '\0'; //ÀúÀåµÈ ¸Ş½ÃÁö¸¦ ³Î·Î ÃÊ±âÈ­
-		if(Error_Flag == L1_L2_FAIL){ //L1°ú L2ÀÇ ¸ñÀûÁöÁÖ¼Ò°¡ ´Ù¸¦ °æ¿ì 
+		strcpy(output, L1_receive(&length)); //ë“¤ì–´ì˜¬ ë©”ì‹œì§€ ë³µì‚¬ í›„ ì €ì¥		
+		output[length] = '\0'; //ì €ì¥ëœ ë©”ì‹œì§€ë¥¼ ë„ë¡œ ì´ˆê¸°í™”
+		if(Error_Flag == L1_L2_FAIL){ //L1ê³¼ L2ì˜ ëª©ì ì§€ì£¼ì†Œê°€ ë‹¤ë¥¼ ê²½ìš° 
 			printf("L1, L2 Address is Not Correct!! \n");
 			Error_Flag = PASS;
 		}
-		else if(Error_Flag == L1_FAIL){ //L1ÀÇ ¸ñÀûÁöÁÖ¼Ò°¡ ´Ù¸¦ °æ¿ì 
+		else if(Error_Flag == L1_FAIL){ //L1ì˜ ëª©ì ì§€ì£¼ì†Œê°€ ë‹¤ë¥¼ ê²½ìš° 
 			printf("L1 Address is Not Correct!! \n");
 			Error_Flag = PASS;
 		}
-		else if(Error_Flag == L2_FAIL){ //L2ÀÇ ¸ñÀûÁöÁÖ¼Ò°¡ ´Ù¸¦ °æ¿ì 
+		else if(Error_Flag == L2_FAIL){ //L2ì˜ ëª©ì ì§€ì£¼ì†Œê°€ ë‹¤ë¥¼ ê²½ìš° 
 			printf("L2 Address is Not Correct!! \n");
 			Error_Flag = PASS;
 		}
-		else{ //L1°ú L2ÀÇ ¸ñÀûÁöÁÖ¼Ò°¡ °°À» °æ¿ì 
+		else{ //L1ê³¼ L2ì˜ ëª©ì ì§€ì£¼ì†Œê°€ ê°™ì„ ê²½ìš° 
 			printf("Length %d\n", length);
 			printf("Received : ");
 			puts(output);
 			printf("\n");
 		}
-		if(!strcmp(output,"exit")) break; //µé¾î¿Ã ¸Ş½ÃÁö°¡ ¡®exit' ºñ±³ÈÄ exit¶ó¸é ÇÁ·Î±×·¥ Á¾·á
+		if(!strcmp(output,"exit")) break; //ë“¤ì–´ì˜¬ ë©”ì‹œì§€ê°€ â€˜exit' ë¹„êµí›„ exitë¼ë©´ í”„ë¡œê·¸ë¨ ì¢…ë£Œ
 	}
-	close(ssock); //¼ÒÄÏ ´İÀ½
-} //exit°¡ ¹Ş¾Æ¿Ã ¶§ ±îÁö ¹İº¹ÇØ¼­ ¸Ş½ÃÁö ¹ŞÀ½
+	close(ssock); //ì†Œì¼“ ë‹«ìŒ
+} //exitê°€ ë°›ì•„ì˜¬ ë•Œ ê¹Œì§€ ë°˜ë³µí•´ì„œ ë©”ì‹œì§€ ë°›ìŒ
 
 char * L1_receive(int *length){
-	static int seq; //Á¤Àûº¯¼ö ¼±¾ğ
-	struct L1 *data; //dataº¯¼ö ¼±¾ğ
-	int i; //for¹®À» À§ÇÑ º¯¼ö ¼±¾ğ
-	/*L1ÀÇ ½ÃÀÛÁÖ¼Ò¿Í ¸ñÀûÁöÁÖ¼Ò¸¦ Á¤ÀÇ*/
+	static int seq; //ì •ì ë³€ìˆ˜ ì„ ì–¸
+	struct L1 *data; //dataë³€ìˆ˜ ì„ ì–¸
+	int i; //forë¬¸ì„ ìœ„í•œ ë³€ìˆ˜ ì„ ì–¸
+	/*L1ì˜ ì‹œì‘ì£¼ì†Œì™€ ëª©ì ì§€ì£¼ì†Œë¥¼ ì •ì˜*/
 	L1_Data.saddr[0] = 11;
 	L1_Data.saddr[1] = 22;
 	L1_Data.saddr[2] = 33;
@@ -89,34 +89,34 @@ char * L1_receive(int *length){
 	L1_Data.daddr[4] = 56;
 	L1_Data.daddr[5] = 67;
 
-	data = (struct L1*)L2_receive(length); //L2¿¡¼­ ¹ŞÀº ±æÀÌ ¸¸Å­ L1 data¿¡ ÀúÀå                                                      
-	*length = *length - sizeof(data->daddr) - sizeof(data->length) - sizeof(data->saddr) - sizeof(data->seq); //¹ŞÀº µ¥ÀÌÅÍÀÇ ±æÀÌ¸¦ °è»êÇÏ¿© ÀúÀå
+	data = (struct L1*)L2_receive(length); //L2ì—ì„œ ë°›ì€ ê¸¸ì´ ë§Œí¼ L1 dataì— ì €ì¥                                                      
+	*length = *length - sizeof(data->daddr) - sizeof(data->length) - sizeof(data->saddr) - sizeof(data->seq); //ë°›ì€ ë°ì´í„°ì˜ ê¸¸ì´ë¥¼ ê³„ì‚°í•˜ì—¬ ì €ì¥
 
-	for (i = 0; i <= 100; i++){ //sender¿¡¼­ ¹ß»ıµÈ ³­¼ö Ã£±â                                  
+	for (i = 0; i <= 100; i++){ //senderì—ì„œ ë°œìƒëœ ë‚œìˆ˜ ì°¾ê¸°                                  
 		if (data->seq == i)
 			seq = i;
 	}
-	if(data->seq == seq) //sender¿¡¼­ ¹Ş¾Æ¿Â seq¿Í °ªÀÌ °°À¸¸é seq°ª Ãâ·Â
+	if(data->seq == seq) //senderì—ì„œ ë°›ì•„ì˜¨ seqì™€ ê°’ì´ ê°™ìœ¼ë©´ seqê°’ ì¶œë ¥
 		printf ("Expected_sequence  : %d\n", data->seq);
-	for(i = 0;  i < 6;  i++){ //sender¿¡¼­ º¸³»¿Â ¸ñÀûÁÖ¼Ò¿Í receiverÀÇ ¸ñÀûÁÖ¼Ò¸¦ ºñ±³ÇÏ´Â ¹İº¹¹®
-		if(L1_Data.daddr[i] != data->daddr[i]){ //sender¿¡¼­ º¸³»¿Â ¸ñÀûÁÖ¼Ò¿Í receiverÀÇ ¸ñÀûÁÖ¼Ò°¡ ´Ù¸¦ °æ¿ì 
-			if(Error_Flag == L2_FAIL){ //L2¿¡¼­µµ ¸ñÀûÁö ÁÖ¼Ò°¡ ´Ù¸¦ °æ¿ì
+	for(i = 0;  i < 6;  i++){ //senderì—ì„œ ë³´ë‚´ì˜¨ ëª©ì ì£¼ì†Œì™€ receiverì˜ ëª©ì ì£¼ì†Œë¥¼ ë¹„êµí•˜ëŠ” ë°˜ë³µë¬¸
+		if(L1_Data.daddr[i] != data->daddr[i]){ //senderì—ì„œ ë³´ë‚´ì˜¨ ëª©ì ì£¼ì†Œì™€ receiverì˜ ëª©ì ì£¼ì†Œê°€ ë‹¤ë¥¼ ê²½ìš° 
+			if(Error_Flag == L2_FAIL){ //L2ì—ì„œë„ ëª©ì ì§€ ì£¼ì†Œê°€ ë‹¤ë¥¼ ê²½ìš°
 				Error_Flag = L1_L2_FAIL;
 				i = 99;
 			}
-			else{ //L1ÀÇ ¸ñÀûÁö ÁÖ¼Ò°¡ ´Ù¸¦ °æ¿ì	
+			else{ //L1ì˜ ëª©ì ì§€ ì£¼ì†Œê°€ ë‹¤ë¥¼ ê²½ìš°	
 				Error_Flag = L1_FAIL;
 				i = 99;
 			}		
 		}
 	}
-	return (char *)data->L1_data; //main µ¥ÀÌÅÍ¸¸ ÃßÃâÇÑ °ÍÀ» ¿¡ º¸³¿
+	return (char *)data->L1_data; //main ë°ì´í„°ë§Œ ì¶”ì¶œí•œ ê²ƒì„ ì— ë³´ëƒ„
 }
 
 char * L2_receive(int *length){
-	struct L2 *data; //dataº¯¼ö ¼±¾ğ
+	struct L2 *data; //dataë³€ìˆ˜ ì„ ì–¸
 	int i;
-	/*L2ÀÇ ½ÃÀÛÁÖ¼Ò¿Í ¸ñÀûÁöÁÖ¼Ò¸¦ Á¤ÀÇ*/
+	/*L2ì˜ ì‹œì‘ì£¼ì†Œì™€ ëª©ì ì§€ì£¼ì†Œë¥¼ ì •ì˜*/
 	L2_Data.saddr[0] = 192;
 	L2_Data.saddr[1] = 168;
 	L2_Data.saddr[2] = 30;
@@ -125,29 +125,29 @@ char * L2_receive(int *length){
 	L2_Data.daddr[1] = 167;
 	L2_Data.daddr[2] = 31;
 	L2_Data.daddr[3] = 33;
-	data = (struct L2*)L3_receive(length); //L3¿¡¼­ ¹ŞÀº ±æÀÌ ¸¸Å­ L2 data¿¡ ÀúÀå
-	*length = *length - sizeof(data->daddr) - sizeof(data->length) - sizeof(data->saddr); //¹ŞÀº µ¥ÀÌÅÍÀÇ ±æÀÌ¸¦ °è»êÇÏ¿© ÀúÀå
+	data = (struct L2*)L3_receive(length); //L3ì—ì„œ ë°›ì€ ê¸¸ì´ ë§Œí¼ L2 dataì— ì €ì¥
+	*length = *length - sizeof(data->daddr) - sizeof(data->length) - sizeof(data->saddr); //ë°›ì€ ë°ì´í„°ì˜ ê¸¸ì´ë¥¼ ê³„ì‚°í•˜ì—¬ ì €ì¥
 
-	for(i = 0; i < 4;  i++){ //sender¿¡¼­ º¸³»¿Â ¸ñÀûÁÖ¼Ò¿Í receiverÀÇ ¸ñÀûÁÖ¼Ò¸¦ ºñ±³ÇÏ´Â ¹İº¹¹®
-		if(L2_Data.daddr[i] != data->daddr[i]) //L2ÀÇ ¸ñÀûÁö ÁÖ¼Ò°¡ ´Ù¸¦ °æ¿ì
+	for(i = 0; i < 4;  i++){ //senderì—ì„œ ë³´ë‚´ì˜¨ ëª©ì ì£¼ì†Œì™€ receiverì˜ ëª©ì ì£¼ì†Œë¥¼ ë¹„êµí•˜ëŠ” ë°˜ë³µë¬¸
+		if(L2_Data.daddr[i] != data->daddr[i]) //L2ì˜ ëª©ì ì§€ ì£¼ì†Œê°€ ë‹¤ë¥¼ ê²½ìš°
 			Error_Flag = L2_FAIL; 
 	}
-	return (char *)data->L2_data; //µ¥ÀÌÅÍ¸¸ ÃßÃâÇÑ °ÍÀ» L1¿¡ º¸³¿
+	return (char *)data->L2_data; //ë°ì´í„°ë§Œ ì¶”ì¶œí•œ ê²ƒì„ L1ì— ë³´ëƒ„
 }
 
 char *L3_receive(int *length){
-	static char data[MAX_SIZE]; //Á¤Àû º¯¼ö ¼±¾ğ
-	int i=0; //0¹øÂ° ¹æºÎÅÍ ÇÏ³ª¾¿ È®ÀÎ	
+	static char data[MAX_SIZE]; //ì •ì  ë³€ìˆ˜ ì„ ì–¸
+	int i=0; //0ë²ˆì§¸ ë°©ë¶€í„° í•˜ë‚˜ì”© í™•ì¸	
 
 	if((i=recvfrom(ssock, data, MAX_SIZE, 0,(struct sockaddr *)&server_addr, &clen)) <= 0){
 		perror("read error : ");
 		exit(1);
 	}
-	*length = i; //¹Ş¾Æ¿Â ±æÀÌ¸¸Å­ length¿¡ ÀúÀå
-	return data; //µ¥ÀÌÅÍ º¸³¿
+	*length = i; //ë°›ì•„ì˜¨ ê¸¸ì´ë§Œí¼ lengthì— ì €ì¥
+	return data; //ë°ì´í„° ë³´ëƒ„
 }
 
-void setSocket(){ //¼ÒÄÏ »ı¼º
+void setSocket(){ //ì†Œì¼“ ìƒì„±
 	if((ssock=socket(PF_INET,SOCK_DGRAM,IPPROTO_UDP)) < 0) {
 		perror("socket error : ");
 		exit(1);

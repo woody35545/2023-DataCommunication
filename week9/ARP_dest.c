@@ -11,15 +11,15 @@
 #define IP_ADDRESS "127.0.0.1"
 int sndsock,rcvsock;
 int clen;
-int IP_condition = 0, MAC_condition = 0; // IP, MACÀÇ »óÅÂ¸¦ ÀúÀåÇÒ º¯¼ö
-char output[MAX_SIZE]; // Àü´Ş ¹ŞÀº ¸Ş½ÃÁö¸¦ ÀúÀåÇÒ º¯¼ö
+int IP_condition = 0, MAC_condition = 0; // IP, MACì˜ ìƒíƒœë¥¼ ì €ì¥í•  ë³€ìˆ˜
+char output[MAX_SIZE]; // ì „ë‹¬ ë°›ì€ ë©”ì‹œì§€ë¥¼ ì €ì¥í•  ë³€ìˆ˜
 
-int IP[4] = {192, 168, 43, 13};// °íÁ¤ IP
-int rec_IP[4]; // Àü´Ş ¹ŞÀº IP¸¦ ÀúÀåÇÒ º¯¼ö
-char MAC[20] = "0A:77:81:9A:52:36";// °íÁ¤ MAC
-char rec_MAC[20]; // Àü´Ş ¹ŞÀº MACÀ» ÀúÀåÇÒ º¯¼ö
-int type; // typeÀ» ÀúÀåÇÒ º¯¼ö
-char thread_type = 'r'; // thread_typeÀ» ÁöÁ¤ÇÒ º¯¼ö
+int IP[4] = {192, 168, 43, 13};// ê³ ì • IP
+int rec_IP[4]; // ì „ë‹¬ ë°›ì€ IPë¥¼ ì €ì¥í•  ë³€ìˆ˜
+char MAC[20] = "0A:77:81:9A:52:36";// ê³ ì • MAC
+char rec_MAC[20]; // ì „ë‹¬ ë°›ì€ MACì„ ì €ì¥í•  ë³€ìˆ˜
+int type; // typeì„ ì €ì¥í•  ë³€ìˆ˜
+char thread_type = 'r'; // thread_typeì„ ì§€ì •í•  ë³€ìˆ˜
 
 struct sockaddr_in s_addr,r_addr;
 
@@ -29,14 +29,14 @@ struct L1{
 	int length;
 	int type;
 	char L1_data[MAX_SIZE];
-}; // ±¸Á¶Ã¼ L1
+}; // êµ¬ì¡°ì²´ L1
 
 struct L2{
 	int rec_IP[4];
 	int own_IP[4];
 	int length;
 	char L2_data[MAX_SIZE];
-}; // ±¸Á¶Ã¼ L2
+}; // êµ¬ì¡°ì²´ L2
 
 char *L1_receive(int *);
 char *L2_receive(int *);
@@ -52,7 +52,7 @@ int main (void){
 	pthread_t tid; 
 
 	setSocket();
-	pthread_create(&tid, NULL, do_thread, (void *)0); // receiver¿ë thread »ı¼º
+	pthread_create(&tid, NULL, do_thread, (void *)0); // receiverìš© thread ìƒì„±
 
 	while (1){
 		if(thread_type == 'r'){
@@ -65,14 +65,14 @@ int main (void){
 					type = 2;
 				if(output != '\0')
 					thread_type = 's';
-			} // ³ªÀÇ MACÁÖ¼Ò¸¦ ¿äÃ»ÇÒ °æ¿ì MACÁÖ¼Ò¸¦ ³Ñ°ÜÁÖ±â À§ÇØ
+			} // ë‚˜ì˜ MACì£¼ì†Œë¥¼ ìš”ì²­í•  ê²½ìš° MACì£¼ì†Œë¥¼ ë„˜ê²¨ì£¼ê¸° ìœ„í•´
 			else if((IP_condition == 0) && (MAC_condition == 0) && (type == 2)){
 				printf("Length %d\n", length);
 				printf("Receiver Message : %s\n\n", output);
-			} // ¸Ş½ÃÁö¸¦ Àü¼Û ¹ŞÀ» °æ¿ì ¸Ş½ÃÁö Ãâ·Â
+			} // ë©”ì‹œì§€ë¥¼ ì „ì†¡ ë°›ì„ ê²½ìš° ë©”ì‹œì§€ ì¶œë ¥
 			else{
 				thread_type = 'e';
-			} // Àü¼Û ¹ŞÀº µ¥ÀÌÅÍ°¡ ³ªÀÇ °ÍÀÌ ¾Æ´Ñ °æ¿ì
+			} // ì „ì†¡ ë°›ì€ ë°ì´í„°ê°€ ë‚˜ì˜ ê²ƒì´ ì•„ë‹Œ ê²½ìš°
 			if(!strcmp(output,"exit")) break;
 		}
 	}
@@ -85,14 +85,14 @@ void *do_thread(void *arg){
 			L1_send(output, strlen(output));
 
 			thread_type = 'r';
-		} // MACÁÖ¼Ò Àü¼Û
+		} // MACì£¼ì†Œ ì „ì†¡
 		else if(thread_type == 'e'){
 			strcpy(output, "error");
 			type = 3;
 			L1_send(output, strlen(output));
 
 			thread_type = 'r';
-		} // errorÀü¼Û
+		} // errorì „ì†¡
 		if(!strcmp(output,"exit")) break; 
 	}
 	close(sndsock);
@@ -108,13 +108,13 @@ char * L1_receive(int *length){
 
 	if(type == 1){
 		strcpy(rec_MAC, data->rec_MAC);
-	} // MAC ÀÀ´äÀ» À§ÇÑ »ó´ë¹æÀÇ MACÀúÀå
+	} // MAC ì‘ë‹µì„ ìœ„í•œ ìƒëŒ€ë°©ì˜ MACì €ì¥
 	else if(type == 2){
 		if(strcmp(MAC, data->own_MAC) == 0)
 			MAC_condition = 0;
 		else
 			MAC_condition = 1;
-	} // ¸Ş½ÃÁö¸¦ Àü¼Û ¹ŞÀ» °æ¿ì ³ªÀÇ °ÍÀÎÁö MAC °Ë»ç
+	} // ë©”ì‹œì§€ë¥¼ ì „ì†¡ ë°›ì„ ê²½ìš° ë‚˜ì˜ ê²ƒì¸ì§€ MAC ê²€ì‚¬
 
 	*length = *length - sizeof(struct L1) + sizeof(data->L1_data);
 	return (char *)data->L1_data; 
@@ -134,9 +134,9 @@ char * L2_receive(int *length){
 			IP_condition = 1;
 			break;
 		}
-	} // IP°Ë»ç
+	} // IPê²€ì‚¬
 
-	if(IP_condition == 0) // IPÀÇ °ªÀÌ ÀÌ»óÀÌ ¾øÀ» °æ¿ì »ó´ë¹æÀÇ IPÀúÀå
+	if(IP_condition == 0) // IPì˜ ê°’ì´ ì´ìƒì´ ì—†ì„ ê²½ìš° ìƒëŒ€ë°©ì˜ IPì €ì¥
 		memcpy(rec_IP, data->rec_IP, sizeof(rec_IP));
 
 	*length = *length - sizeof(struct L2) + sizeof(data->L2_data);
@@ -164,8 +164,8 @@ void L1_send(char *input, int length){
 	data.type = type; 
 	data.length = length; 
 
-	strcpy(data.own_MAC, MAC); // ³ªÀÇ MACÁÖ¼Ò ÀúÀå
-	strcpy(data.rec_MAC, rec_MAC); // Àü¼ÛÇÒ °÷ÀÇ MACÁÖ¼Ò ÀúÀå
+	strcpy(data.own_MAC, MAC); // ë‚˜ì˜ MACì£¼ì†Œ ì €ì¥
+	strcpy(data.rec_MAC, rec_MAC); // ì „ì†¡í•  ê³³ì˜ MACì£¼ì†Œ ì €ì¥
 
 	memset(data.L1_data, 0x00, MAX_SIZE); 
 	strcpy (data.L1_data, input); 
@@ -183,8 +183,8 @@ void L2_send(char *input, int length){
 	char temp[350]; 
 	int size = 0; 
 
-	memcpy(data.own_IP, &IP, sizeof(IP)); // ³ªÀÇ IPÁÖ¼Ò ÀúÀå
-	memcpy(data.rec_IP, &rec_IP, sizeof(rec_IP)); // Àü¼ÛÇÒ °÷ÀÇ IPÁÖ¼Ò ÀúÀå
+	memcpy(data.own_IP, &IP, sizeof(IP)); // ë‚˜ì˜ IPì£¼ì†Œ ì €ì¥
+	memcpy(data.rec_IP, &rec_IP, sizeof(rec_IP)); // ì „ì†¡í•  ê³³ì˜ IPì£¼ì†Œ ì €ì¥
 
 	data.length = length; 
 	memset(data.L2_data, 0x00, MAX_SIZE); 

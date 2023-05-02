@@ -12,16 +12,16 @@
 #define IP_ADDRESS "127.0.0.1"
 int sndsock,rcvsock;
 int clen;
-int IP_condition = 0, MAC_condition = 0, table_count = -1, table_num; // IP, MACÀÇ »óÅÂ¿Í CacheÅ×ÀÌºí Ä«¿îÅÍ¿Í Å×ÀÌºí Ã¼Å©¸¦ À§ÇÑ º¯¼ö
+int IP_condition = 0, MAC_condition = 0, table_count = -1, table_num; // IP, MACì˜ ìƒíƒœì™€ Cacheí…Œì´ë¸” ì¹´ìš´í„°ì™€ í…Œì´ë¸” ì²´í¬ë¥¼ ìœ„í•œ ë³€ìˆ˜
 
-int IP[4] = {203, 255, 43, 21}; // °íÁ¤ IPÁÖ¼Ò
-int input_IP[4]; // ÀÔ·Â ¹ŞÀº IP¸¦ ÀúÀåÇÒ º¯¼ö
-char MAC[20] = "0A:10:9C:31:79:6F"; // °íÁ¤ MACÁÖ¼Ò
+int IP[4] = {203, 255, 43, 21}; // ê³ ì • IPì£¼ì†Œ
+int input_IP[4]; // ì…ë ¥ ë°›ì€ IPë¥¼ ì €ì¥í•  ë³€ìˆ˜
+char MAC[20] = "0A:10:9C:31:79:6F"; // ê³ ì • MACì£¼ì†Œ
 int type = 1; 
-char mode = 'n'; // sender¿Í Cache_table thread¸¦ ±¸º°ÇÒ º¯¼ö
-int re_time = 60; // renewal Å¸ÀÓ º¯¼ö
-char thread_type = 's'; // thread Å¸ÀÔÀ» ÁöÁ¤ÇÒ º¯¼ö
-clock_t past; // clockÀ» ÀÌ¿ëÇØ °ú°Å ½Ã°£À» ÀúÀåÇÒ º¯¼ö
+char mode = 'n'; // senderì™€ Cache_table threadë¥¼ êµ¬ë³„í•  ë³€ìˆ˜
+int re_time = 60; // renewal íƒ€ì„ ë³€ìˆ˜
+char thread_type = 's'; // thread íƒ€ì…ì„ ì§€ì •í•  ë³€ìˆ˜
+clock_t past; // clockì„ ì´ìš©í•´ ê³¼ê±° ì‹œê°„ì„ ì €ì¥í•  ë³€ìˆ˜
 
 struct sockaddr_in s_addr,r_addr;
 
@@ -31,19 +31,19 @@ struct L1{
 	int length;
 	int type;
 	char L1_data[MAX_SIZE];
-}; // ±¸Á¶Ã¼ L1
+}; // êµ¬ì¡°ì²´ L1
 
 struct L2{
 	int own_IP[4];
 	int rec_IP[4];
 	int length;
 	char L2_data[MAX_SIZE];
-}; // ±¸Á¶Ã¼ L2
+}; // êµ¬ì¡°ì²´ L2
 
 struct ARP_Cache_Table{
 	int IP[4];
 	char MAC[20];
-} ARP_Cache[5]; // ARP_Cache_Table ±¸Á¶Ã¼
+} ARP_Cache[5]; // ARP_Cache_Table êµ¬ì¡°ì²´
 
 void L1_send(char *input, int length);
 void L2_send(char *input, int length, char);
@@ -52,19 +52,19 @@ char *L1_receive(int *);
 char *L2_receive(int *);
 char *L3_receive(int *);
 void setSocket(void);
-void *do_thread(void *); // receiver¿ë thread
-void *table_thread(void *); // Cache_table¿ë thread
-int check_table(char *); // Cache_table¿¡ ÀúÀåµÈ °ªµéÀ» °Ë»çÇÒ ÇÔ¼ö
+void *do_thread(void *); // receiverìš© thread
+void *table_thread(void *); // Cache_tableìš© thread
+int check_table(char *); // Cache_tableì— ì €ì¥ëœ ê°’ë“¤ì„ ê²€ì‚¬í•  í•¨ìˆ˜
 
 int main (void){
-	char input[MAX_SIZE]; // ¸Ş½ÃÁö¸¦ ÀÔ·Â ¹ŞÀ» input ¹è¿­
-	int select; // // ¸Ş´º¸¦ ¼±ÅÃÇÒ º¯¼ö
-	char dest_ip[50]; // ip°ªÀ» ÀúÀåÇÏ±â À§ÇÑ º¯¼ö
-	pthread_t tid; // thread¸¦ »ı¼ºÇÏ±âÀ§ÇÑ º¯¼ö
+	char input[MAX_SIZE]; // ë©”ì‹œì§€ë¥¼ ì…ë ¥ ë°›ì„ input ë°°ì—´
+	int select; // // ë©”ë‰´ë¥¼ ì„ íƒí•  ë³€ìˆ˜
+	char dest_ip[50]; // ipê°’ì„ ì €ì¥í•˜ê¸° ìœ„í•œ ë³€ìˆ˜
+	pthread_t tid; // threadë¥¼ ìƒì„±í•˜ê¸°ìœ„í•œ ë³€ìˆ˜
 
-	setSocket(); // // receiver¿Í ¿¬°á
-	pthread_create(&tid, NULL, do_thread, (void *)0); //receiver¿ë thread »ı¼º
-	pthread_create(&tid, NULL, table_thread, (void *)0); //Cache_table¿ë thread »ı¼º
+	setSocket(); // // receiverì™€ ì—°ê²°
+	pthread_create(&tid, NULL, do_thread, (void *)0); //receiverìš© thread ìƒì„±
+	pthread_create(&tid, NULL, table_thread, (void *)0); //Cache_tableìš© thread ìƒì„±
 
 	while (1){
 		if(thread_type == 's' && type == 1 && mode == 'n'){
@@ -77,7 +77,7 @@ int main (void){
 			scanf("%d", &select);
 
 			switch(select){
-			case 1: // 	send data¿Í ip¸¦ ÀÔ·Â¹Ş´Â´Ù
+			case 1: // 	send dataì™€ ipë¥¼ ì…ë ¥ë°›ëŠ”ë‹¤
 				memset(dest_ip, 0x00, 50);
 				printf("Send Text : ");
 				scanf("%s", input);
@@ -87,18 +87,18 @@ int main (void){
 					strcpy(dest_ip, "Requst");
 					L1_send(dest_ip, strlen(dest_ip));
 					thread_type = 'r';
-				}// Cache_table¿¡ IPÀÇ °ªÀÌ ¾øÀ» °æ¿ì MACÀ» È£ÃâÇÏ±â À§ÇØ
+				}// Cache_tableì— IPì˜ ê°’ì´ ì—†ì„ ê²½ìš° MACì„ í˜¸ì¶œí•˜ê¸° ìœ„í•´
 				else{
 					type = 2;
-				}// Cache_table¿¡ IPÀÇ °ªÀÌ ÀÖÀ» °æ¿ì ¸Ş½ÃÁö¸¦ Àü¼ÛÇÏ±â À§ÇØ
+				}// Cache_tableì— IPì˜ ê°’ì´ ìˆì„ ê²½ìš° ë©”ì‹œì§€ë¥¼ ì „ì†¡í•˜ê¸° ìœ„í•´
 				break;
-			case 2: // Cache_tableÀ» º»´Ù
+			case 2: // Cache_tableì„ ë³¸ë‹¤
 				mode = 'v';
 				break; 
-			case 3: // Á¾·á
+			case 3: // ì¢…ë£Œ
 				strcpy(input,"exit");
 				break;
-			default: // 1~3 ÀÌ¿ÜÀÇ °ªÀ» ÀÔ·ÂÇÒ °æ¿ì
+			default: // 1~3 ì´ì™¸ì˜ ê°’ì„ ì…ë ¥í•  ê²½ìš°
 				printf("Please Write number in menu\n");
 			}		
 			if(!strcmp(input,"exit")) break;
@@ -106,14 +106,14 @@ int main (void){
 		else if(thread_type == 's' && type == 2 && mode == 'n'){
 			L1_send(input, strlen(input));
 			type = 1;
-		}// Cache_table¿¡ ÀÔ·ÂÇÑ IPÀÇ °ªÀÌ ÀÖÀ»°æ¿ì ¸Ş½ÃÁö Àü¼Û
+		}// Cache_tableì— ì…ë ¥í•œ IPì˜ ê°’ì´ ìˆì„ê²½ìš° ë©”ì‹œì§€ ì „ì†¡
 	}
 	close(sndsock);
 }
 
 void *do_thread(void *arg){
-	char output[MAX_SIZE]; // Àü´Ş ¹ŞÀº ¸Ş½ÃÁö¸¦ ÀúÀåÇÒ º¯¼ö
-	int length; // µ¥ÀÌÅÍÀÇ »çÀÌÁî¸¦ ÀúÀåÇÒ º¯¼ö
+	char output[MAX_SIZE]; // ì „ë‹¬ ë°›ì€ ë©”ì‹œì§€ë¥¼ ì €ì¥í•  ë³€ìˆ˜
+	int length; // ë°ì´í„°ì˜ ì‚¬ì´ì¦ˆë¥¼ ì €ì¥í•  ë³€ìˆ˜
 
 	while (1){
 		if(thread_type == 'r'){
@@ -121,16 +121,16 @@ void *do_thread(void *arg){
 
 			strcpy(output, L1_receive(&length));
 
-			if(type == 2) // MAC ÁÖ¼Ò¸¦ ¹Ş¾Æ¿ÔÀ» °æ¿ì
+			if(type == 2) // MAC ì£¼ì†Œë¥¼ ë°›ì•„ì™”ì„ ê²½ìš°
 				printf("ARP_Reply\n");
-			else if(type == 3 ){ // ÀÔ·Â ¹ŞÀº IP¸¦ °¡Áö°í ÀÖ´Â °÷ÀÌ ¾øÀ»°æ¿ì
+			else if(type == 3 ){ // ì…ë ¥ ë°›ì€ IPë¥¼ ê°€ì§€ê³  ìˆëŠ” ê³³ì´ ì—†ì„ê²½ìš°
 				printf("Nobody have input IP\n");
 				type = 1;
 			}
 
 			output[length] = '\0';
 
-			if(output != '\0') // sender¸¦ ½ÇÇà
+			if(output != '\0') // senderë¥¼ ì‹¤í–‰
 				thread_type = 's';
 
 			if(!strcmp(output,"exit")) break; // 
@@ -142,22 +142,22 @@ void *do_thread(void *arg){
 void *table_thread(void *arg){
 	int i, back, p_time;
 
-	past = clock();// ÇöÀçÀÇ clock°ªÀ» ÀúÀå
+	past = clock();// í˜„ì¬ì˜ clockê°’ì„ ì €ì¥
 	re_time = 60;
 
 	while(1){
 		if((clock() - past) / CLOCKS_PER_SEC){
 			re_time--;
 			past = clock();
-		} // 1ÃÊ¸¶´Ù renewal timeÀÇ °ªÀ» ÁÙÀÎ´Ù.
+		} // 1ì´ˆë§ˆë‹¤ renewal timeì˜ ê°’ì„ ì¤„ì¸ë‹¤.
 
 		if(re_time == 0){
 			memset(ARP_Cache, 0x00, sizeof(struct ARP_Cache_Table));
 			table_count = -1;
 			re_time = 10;
-		} // renewalÀÇ °ªÀÌ 0ÀÌ µÉ °æ¿ì ARP_Cache_TableÀ» ÃÊ±âÈ­ÇÑ´Ù.
+		} // renewalì˜ ê°’ì´ 0ì´ ë  ê²½ìš° ARP_Cache_Tableì„ ì´ˆê¸°í™”í•œë‹¤.
 
-		if(mode == 'v'){ // ARP_Cache_Table Ãâ·Â
+		if(mode == 'v'){ // ARP_Cache_Table ì¶œë ¥
 			for(i = 0; i <= table_count; i++){
 				printf("ARP_Cache Table number : %d\n", i);
 				printf("Destination_IP : %d.%d.%d.%d\n", ARP_Cache[i].IP[0], ARP_Cache[i].IP[1], ARP_Cache[i].IP[2], ARP_Cache[i].IP[3]);
@@ -175,7 +175,7 @@ void *table_thread(void *arg){
 			p_time = re_time + 1;
 		}
 
-		if(mode == 't' && table_count > -1){ // renewal ±îÁö ³²Àº ½Ã°£À» Ãâ·Â
+		if(mode == 't' && table_count > -1){ // renewal ê¹Œì§€ ë‚¨ì€ ì‹œê°„ì„ ì¶œë ¥
 			if(re_time != p_time){
 				printf("\rRenewal Time : %2d", re_time);
 				fflush(stdout);
@@ -183,13 +183,13 @@ void *table_thread(void *arg){
 				p_time = re_time;
 			}
 
-			if((back - re_time) >= 5) // 5ÃÊ°£ renewal±îÁö ³²Àº ½Ã°£À» º¸¿©ÁÖ°í ¸Ş´º·Î µ¹¾Æ°£´Ù.
+			if((back - re_time) >= 5) // 5ì´ˆê°„ renewalê¹Œì§€ ë‚¨ì€ ì‹œê°„ì„ ë³´ì—¬ì£¼ê³  ë©”ë‰´ë¡œ ëŒì•„ê°„ë‹¤.
 				mode = 'n';
 		}
 		else if(mode == 't' && table_count == -1){
 			printf("Renewal Cache_table\n\n");
 			mode = 'n';
-		} // Cache_TableÀ» º¸°í ÀÖÀ» ¶§ renewal timeÀÌ 0ÀÌµÇ¸é Ãâ·Â
+		} // Cache_Tableì„ ë³´ê³  ìˆì„ ë•Œ renewal timeì´ 0ì´ë˜ë©´ ì¶œë ¥
 	}
 }
 
@@ -198,7 +198,7 @@ int check_table(char *ip){
 	char token[10];
 	int result = 1;
 
-	memset(token, 0x00, 10); // token ÃÊ±âÈ­
+	memset(token, 0x00, 10); // token ì´ˆê¸°í™”
 
 	for(i = 0, j = 0; i < 4; i++) {
 		for(c = 0; j < 50; j++) {
@@ -213,7 +213,7 @@ int check_table(char *ip){
 		}
 		input_IP[i] = atoi(token); 
 		memset(token, 0x00, 10); 
-	} // ÀÔ·Â¹ŞÀº IPÀÇ °ªÀ» tokenÀ» ÀÌ¿ëÇØ ºĞ¸®ÇÏ¿© input_IP¿¡ ÀúÀåÇÑ´Ù.
+	} // ì…ë ¥ë°›ì€ IPì˜ ê°’ì„ tokenì„ ì´ìš©í•´ ë¶„ë¦¬í•˜ì—¬ input_IPì— ì €ì¥í•œë‹¤.
 
 
 	for(i = 0; i <= table_count; i++){
@@ -228,7 +228,7 @@ int check_table(char *ip){
 		}
 		else
 			result = 1;
-	} // ÀÔ·Â¹ŞÀº IPÀÇ °ªÀÌ Cache_Table¿¡ Á¸ÀçÇÏ´ÂÁö °Ë»çÇÑ´Ù.
+	} // ì…ë ¥ë°›ì€ IPì˜ ê°’ì´ Cache_Tableì— ì¡´ì¬í•˜ëŠ”ì§€ ê²€ì‚¬í•œë‹¤.
 
 	return result;
 }
@@ -246,12 +246,12 @@ void L1_send(char *input, int length){
 	data.type = type; 
 	data.length = length; 
 
-	if(type == 2) // ÀÔ·Â ¹ŞÀº IPÀÇ MACÁÖ¼Ò°¡ Cache_Table¿¡ Á¸ÀçÇÒ°æ¿ì
+	if(type == 2) // ì…ë ¥ ë°›ì€ IPì˜ MACì£¼ì†Œê°€ Cache_Tableì— ì¡´ì¬í• ê²½ìš°
 		strcpy(data.rec_MAC, ARP_Cache[table_num].MAC);
-	else // ÀÔ·Â ¹ŞÀº IPÀÇ MAC ÁÖ¼Ò¸¦ ¸ğ¸¦°æ¿ì
+	else // ì…ë ¥ ë°›ì€ IPì˜ MAC ì£¼ì†Œë¥¼ ëª¨ë¥¼ê²½ìš°
 		memset(data.rec_MAC, 0x00, sizeof(data.rec_MAC));
 
-	size = sizeof(struct L1) - sizeof(data.L1_data) + length; // input °ªÀ» ÀúÀåÇÑ ±¸Á¶Ã¼ L1ÀÇ »çÀÌÁî °è»ê
+	size = sizeof(struct L1) - sizeof(data.L1_data) + length; // input ê°’ì„ ì €ì¥í•œ êµ¬ì¡°ì²´ L1ì˜ ì‚¬ì´ì¦ˆ ê³„ì‚°
 
 	memset(temp, 0x00, 350); 
 	memcpy(temp, (void *)&data, size); 
@@ -264,14 +264,14 @@ void L2_send(char *input, int length, char parity){
 	char temp[350]; 
 	int size = 0; 
 
-	memcpy(data.own_IP, &IP, sizeof(IP)); // °íÁ¤ IPÀÇ °ªÀ» ÀúÀå
+	memcpy(data.own_IP, &IP, sizeof(IP)); // ê³ ì • IPì˜ ê°’ì„ ì €ì¥
 
 	if(type == 1)
 	{
 		memcpy(data.rec_IP, &input_IP, sizeof(input_IP));
 		printf("ARP_Requst\n");
-	} // Cache_Table¿¡ ÀÔ·Â¹ŞÀº IPÀÇ MACÁÖ¼Ò°¡ Á¸ÀçÇÏÁö ¾ÊÀ» °æ¿ì ÀÔ·Â¹ŞÀº IP°ª ÀúÀå
-	else if(type == 2) // Cache_Table¿¡ ÀÔ·Â¹ŞÀº IPÀÇ °ªÀÌ Á¸ÀçÇÒ°æ¿ì Cache_TableÀÇ °ªÀ» °¡Á®¿Â´Ù.
+	} // Cache_Tableì— ì…ë ¥ë°›ì€ IPì˜ MACì£¼ì†Œê°€ ì¡´ì¬í•˜ì§€ ì•Šì„ ê²½ìš° ì…ë ¥ë°›ì€ IPê°’ ì €ì¥
+	else if(type == 2) // Cache_Tableì— ì…ë ¥ë°›ì€ IPì˜ ê°’ì´ ì¡´ì¬í• ê²½ìš° Cache_Tableì˜ ê°’ì„ ê°€ì ¸ì˜¨ë‹¤.
 		memcpy(data.rec_IP, &ARP_Cache[table_num].IP, sizeof(data.rec_IP));
 
 	data.length = length; 
@@ -303,17 +303,17 @@ char * L1_receive(int *length){
 
 	data = (struct L1*)L2_receive(length); 
 
-	if(strcmp(MAC, data->own_MAC) == 0) // Àü¼Û ¹ŞÀº dataÀÇ MACÁÖ¼Ò°ªÀ» °Ë»çÇÑ´Ù.
+	if(strcmp(MAC, data->own_MAC) == 0) // ì „ì†¡ ë°›ì€ dataì˜ MACì£¼ì†Œê°’ì„ ê²€ì‚¬í•œë‹¤.
 		MAC_condition = 0;
 	else
 		MAC_condition = 1;
 
-	if(IP_condition == 0 && MAC_condition == 0 && data->type != 3){ // ¹Ş¾Æ¿Â MACÁÖ¼Ò¸¦ Cache_Table¿¡ ÀúÀå
+	if(IP_condition == 0 && MAC_condition == 0 && data->type != 3){ // ë°›ì•„ì˜¨ MACì£¼ì†Œë¥¼ Cache_Tableì— ì €ì¥
 		strcpy(ARP_Cache[table_count].MAC, data->rec_MAC);
 		re_time = 60;
 		printf("ARP_Cache Table is Set!!\n");
 	}
-	else{  // Àü¼Û ¹ŞÀº dataÀÇ °ªÀÌ ³ªÀÇ °ÍÀÌ ¾Æ´Ò°æ¿ì IP°ª ÃÊ±âÈ­
+	else{  // ì „ì†¡ ë°›ì€ dataì˜ ê°’ì´ ë‚˜ì˜ ê²ƒì´ ì•„ë‹ê²½ìš° IPê°’ ì´ˆê¸°í™”
 		memset(ARP_Cache[table_count].IP, 0x00, sizeof(ARP_Cache[table_count].IP));
 		table_count--;
 	}
@@ -337,12 +337,12 @@ char * L2_receive(int *length){
 			IP_condition = 1;
 			break;
 		}
-	}  // Àü¼Û¹ŞÀº dataÀÇ IP °Ë»ç 
+	}  // ì „ì†¡ë°›ì€ dataì˜ IP ê²€ì‚¬ 
 
 	if(IP_condition == 0){
 		table_count++;
 		memcpy(ARP_Cache[table_count].IP, data->rec_IP, sizeof(data->rec_IP));
-	}  // IP °ªÀÌ ÀÌ»ó ¾øÀ» °æ¿ì Cache_Table¿¡ IP°ª ÀúÀå
+	}  // IP ê°’ì´ ì´ìƒ ì—†ì„ ê²½ìš° Cache_Tableì— IPê°’ ì €ì¥
 
 	*length = *length - sizeof(struct L2) + sizeof(data->L2_data); 
 	return (char *)data->L2_data;
