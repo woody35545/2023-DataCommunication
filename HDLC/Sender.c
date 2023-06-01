@@ -15,7 +15,7 @@
 #define UA 0x02
 #define DISC 0x03
 
-
+// deprecated
 struct hdlc
 {
     char opening_flag;
@@ -24,12 +24,17 @@ struct hdlc
     char data[MAX_SIZE];
     char closing_flag;
 };
+
 int isConnected = -1; // Connect 또는 Disconnect 상태를 저장하기 위한 변수. 1: connect, -1: disconnect
 
 struct hdlc;
+char get_hdlc_control(struct hdlc hdlc_packet);
 void set_hdlc_addr(struct hdlc * hdlc_packet, char addr);
-void debug_hdlc_packet(struct hdlc hdlc_packet);
-void send_sabm(char *input, int length);
+//void debug_hdlc_packet(struct hdlc hdlc_packet);
+void debug_hdlc_frame(char* hdlc_frame);
+
+//void send_sabm(char *input, int length);
+void send_sabm();
 
 
 
@@ -42,8 +47,6 @@ struct sockaddr_in s_addr, r_addr;
 void setSocket(void);
 void* do_thread(void*);
 
-
-
 int main(void)
 {        
     char input[MAX_SIZE];
@@ -51,61 +54,64 @@ int main(void)
     int length;
     int i = 0;
     int select; // 사용자가 선택한 메뉴 번호 저장
+    
+     setSocket();
 
     while(1){
-    // 메뉴 출력
-    printf("===== MENU =====\n");
-    printf("[1] Connect\n[2] Chat\n[3] Disconnect\n");
-    printf("================\n");
+        // 메뉴 출력
+        printf("===== MENU =====\n");
+        printf("[1] Connect\n[2] Chat\n[3] Disconnect\n");
+        printf("================\n");
 
-    // 사용자 메뉴 선택
-    /* [#] 유효한 값이 입력되지 않으면 오류 메시지 출력되도록 수정예정  */
-    scanf("%d", &select);
-    if(select > 3){printf("Invalid number!\n");}
-    if(select == 1){
-        printf("[DEBUG] Connect selected!\n");
-        
-        /* for test */
-        send_sabm(NULL, NULL);
+        // 사용자 메뉴 선택
+        /* [#] 유효한 값이 입력되지 않으면 오류 메시지 출력되도록 수정예정  */
+        scanf("%d", &select);
+        if(select > 3){
+            printf("Invalid number!\n");
+        }
+
+        if(select == 1){
+            printf("[DEBUG] Connect selected!\n");
+            
+            /* for test */
+            send_sabm();
 
 
-        // After finishing Connect
-        isConnected = 1;
-    }
-    if(select == 2){
-        if(isConnected == -1) {printf("[DEBUG] Connect first!\n");}
-        else{
-            printf("[DEBUG] Chat selected!\n");
-            printf("[DEBUG] Chat started!\n");
+            // After finishing Connect
+            isConnected = 1;
+        }
 
-            setSocket();
-            pthread_t t_id;
-            int status = pthread_create(&t_id, NULL, do_thread, NULL);
-            if (status != 0) {
-                printf("Thread Error!\n");
-                exit(1);
-            }
-            while (1) {
-                fflush(stdin);
-                fflush(stdout);
-                printf("[Send] ");
-                fgets(input, sizeof(input), stdin);
-                chat_send(input, strlen(input));   
+        if(select == 2){
+            if(isConnected == -1) {printf("[DEBUG] Connect first!\n");}
+            else{
+                printf("[DEBUG] Chat selected!\n");
+                printf("[DEBUG] Chat started!\n");
+
+                pthread_t t_id;
+                int status = pthread_create(&t_id, NULL, do_thread, NULL);
+                if (status != 0) {
+                    printf("Thread Error!\n");
+                    exit(1);
+                }
+                while (1) {
+                    fflush(stdin);
+                    fflush(stdout);
+                    printf("[Send] ");
+                    fgets(input, sizeof(input), stdin);
+                    chat_send(input, strlen(input));   
+                }
             }
         }
 
-
-    }
-     if(select == 3){
-        if(isConnected == -1) {printf("[DEBUG] Connect first!\n");}
-        else{
-        printf("[DEBUG] Disconnect selected!\n");
-        
-        // After finishing disConnect
-        isConnected = -1;
+        if(select == 3){
+            if(isConnected == -1) {printf("[DEBUG] Connect first!\n");}
+            else{
+            printf("[DEBUG] Disconnect selected!\n");
+            
+            // After finishing disConnect
+            isConnected = -1;
+            }
         }
-    
-    }
     }
 }
 
@@ -169,45 +175,114 @@ void chat_send(char* data, int length)
 }
 
 
-// for checking values in hdlc packet
-void debug_hdlc_packet(struct hdlc hdlc_packet){
+// for checking values in hdlc packet, DEPRECATEd
+// void debug_hdlc_packet(struct hdlc hdlc_packet){
+//     printf("openning_flag: %#0.2x\n", hdlc_packet.opening_flag);
+//     printf("addr: %c\n", hdlc_packet.addr);
+//     printf("control: %#0.2x\n", get_hdlc_control(hdlc_packet));
+//     printf("closing_flag: %#0.2x\n", hdlc_packet.closing_flag);
+//     printf("\n");
+// }
+
+
+void debug_hdlc_frame(char* hdlc_frame){
     
-    printf("openning_flag: %#0.2x\n", hdlc_packet.opening_flag);
-    printf("addr: %c\n", hdlc_packet.addr);
-    printf("control: %#0.2x\n", hdlc_packet.control);
-    printf("closing_flag: %#0.2x\n", hdlc_packet.closing_flag);
+    int total_size = 0; 
+    printf("openning_flag: %#0.2x\n", hdlc_frame[0]);
+    printf("addr: %c\n", hdlc_frame[1]);
+    printf("control: %#0.2x\n", hdlc_frame[2]);
+
+    
+    // find closing flag
+    for(int i=3; i<sizeof(MAX_SIZE); i++){
+        if (hdlc_frame[i] == 0x7E) total_size = i+1;
+    }
+    
+    // print hdlc's data field
+    printf("data: ");
+
+    if(total_size==4){printf("empty\n");}
+    else{
+    for(int i=3; i<total_size-2; i++){
+            
+        printf("data: %#0.2x ", hdlc_frame[i]);
+    }
     printf("\n");
+    }
+    printf("closing_flag: %#0.2x\n", hdlc_frame[total_size-1]);
+    printf("\n");
+//     printf("closing_flag: %#0.2x\n", hdlc_packet.closing_flag);
+//     printf("\n");
 }
 
-
-void set_hdlc_addr(struct hdlc * hdlc_packet, char addr){ 
-    hdlc_packet->addr = addr;
-}
-void set_hdlc_control(struct hdlc * hdlc_packet, char control){ 
-    hdlc_packet->control = control;
-}
-void set_hdlc_flag(struct hdlc * hdlc_packet, char flag){ 
-    hdlc_packet->opening_flag = flag;
-}
-void set_hdlc_cflag(struct hdlc * hdlc_packet, char cflag){ 
-    hdlc_packet->closing_flag = cflag;
+/* DEPRECATED, NOT USING STRUCT ANYMORE
+char get_hdlc_addr(struct hdlc hdlc_packet){
+    return hdlc_packet.addr;
 }
 
+// char get_hdlc_addr(char* hdlc_frame_ptr){
+//     return hdlc_frame_ptr[1];
+// }
 
+void set_hdlc_addr(struct hdlc * hdlc_packet_ptr, char addr){ 
+    hdlc_packet_ptr->addr = addr;
+}
+
+char get_hdlc_control(struct hdlc hdlc_packet){
+    return hdlc_packet.control;
+}
+
+void set_hdlc_control(struct hdlc * hdlc_packet_ptr, char control){ 
+    hdlc_packet_ptr->control = control;
+}
+
+void set_hdlc_flag(struct hdlc * hdlc_packet_ptr, char flag){ 
+    hdlc_packet_ptr->opening_flag = flag;
+}
+void set_hdlc_cflag(struct hdlc * hdlc_packet_ptr, char cflag){ 
+    hdlc_packet_ptr->closing_flag = cflag;
+}
+*/
+
+char get_hdlc_addr(char* hdlc_frame){
+    /* hldc frame size at least 4 bit */
+    if(sizeof(hdlc_frame) < 4) { 
+        printf("Invalid hdlc frame! please check format!"); 
+        return -1; }
+    return hdlc_frame[1];
+    }
 /* Function for testing HDLC packet*/
-void send_sabm(char *input, int length){
-    struct hdlc hdlc_packet;
+//void send_sabm(char *input, int length){
+void send_sabm(){
+    char hdlc_frame[MAX_SIZE];
+    
+    int total_length = 0;
 
-    set_hdlc_flag(&hdlc_packet, DEFAULT_FLAG);
-    set_hdlc_addr(&hdlc_packet, 'B');
-    set_hdlc_control(&hdlc_packet, SABM); 
-    set_hdlc_cflag(&hdlc_packet, DEFAULT_FLAG);
+    // set [openning_flag] field
+    hdlc_frame[0] = DEFAULT_FLAG;
 
-    debug_hdlc_packet(hdlc_packet);
+    // set destination [addr] field
+    hdlc_frame[1] = 'B'; // Destination Addr : 'B' 
+    
+    // set [control] field 
+    hdlc_frame[2] = SABM;
+    printf("hdlc_frame_bytes[2] (= control): %#0.2x\n", hdlc_frame[2]);
+    
+    // no need to set [data] for SABM
 
-    // send hdlc packet
-    //printf("[DEBUG] $ sendto(sndsock, &hdlc_packet, sizeof(hdlc_packet), 0, (struct sockaddr*)&s_addr, sizeof(s_addr));");
-    sendto(sndsock, &hdlc_packet, sizeof(hdlc_packet), 0, (struct sockaddr*)&s_addr, sizeof(s_addr));
+    // set [closing_flag] field
+    hdlc_frame[3] = DEFAULT_FLAG;
+
+    debug_hdlc_frame(hdlc_frame);
+
+    
+    total_length = 4; // fixed size if there's no data in hdlc_frame
+
+    printf("total length = %d\n", total_length);
+
+    //send hdlc packet
+    printf("[DEBUG] $ sendto(sndsock, &hdlc_packet, total_length, 0, (struct sockaddr*)&s_addr, sizeof(s_addr));");
+    sendto(sndsock, &hdlc_frame, total_length, 0, (struct sockaddr*)&s_addr, sizeof(s_addr));
 }
 
 

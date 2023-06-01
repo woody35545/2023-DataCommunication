@@ -10,30 +10,24 @@
 #define IPADDR "127.0.0.1"
 #define PORT 8811
 #define PORTT 8810
+#define RECEIVER_ADDR 'B' // 자신에게 온 hdlc 패킷인지 확인할 때 사용. Receiver의 주소는 'B'라고 가정
 
-struct L1 {
-    int saddr[6];
-    int daddr[6];
-    int length;
-    char L1_data[MAX_SIZE];
-};
-
-struct L2 {
-    int saddr[4];
-    int daddr[4];
-    int length;
-    char L2_data[MAX_SIZE];
-};
-
+// struct hdlc;
+// void debug_hdlc_packet(struct hdlc hdlc_packet);
 
 void chat_send(char* data, int length);
-char* chat_receive(int*);
+char* receive(int*);
 
 int sndsock, rcvsock;
 int clen;
 struct sockaddr_in s_addr, r_addr;
+
+
 void setSocket(void);
 void* do_thread(void*);
+
+
+int isConnected = -1; // 1: connected , -1: not connected
 
 int main(void)
 {        
@@ -48,26 +42,57 @@ int main(void)
         printf("Thread Error!\n");
         exit(1);
     }
+
+    
     while (1) {
         fgets(input, sizeof(input), stdin);
         chat_send(input, strlen(input));   
     }
+    
 }
 
 void* do_thread(void* arg) {
     char output[MAX_SIZE];
+    
     int length;
     while (1) {
-        strcpy(output, chat_receive(&length));
+        strcpy(output, receive(&length));
         output[length] = '\0';
-        printf("Received: %s", output);
+
+        // Sender로부터 받은 메시지 디버깅을 위해서 String 타입과 Bytes 단위로 출력
+        
+        printf("[DEBUG] Received\n\t<String>\n\t\t%s", output);
+        printf("\t<Bytes>\n\t\t");
+        for(int i=0; i<length; i++){
+            printf("[%d]%x ", i, output[i]);
+        } 
+        printf("\n--------------\n");
+        
+        
+
+        /* HDLC Protocol Start */
+        if(isConnected == -1){
+            /* Wating For receiving SBAM Message from sender */
+            //struct hdlc * hdlc_ptr = (struct hdlc *)output;
+            //debug_hdlc_packet(*hdlc_ptr);
+
+        }
+
     }
     return NULL;
 }
 
+// void debug_hdlc_packet(struct hdlc hdlc_packet){
+//     printf("openning_flag: %#0.2x\n", hdlc_packet.opening_flag);
+//     printf("addr: %c\n", hdlc_packet.addr);
+//     printf("control: %#0.2x\n", hdlc_packet.control);
+//     printf("closing_flag: %#0.2x\n", hdlc_packet.closing_flag);
+//     printf("\n");
+// }
+
+
 void setSocket()
 {
-    //Create Send Socket///////////////////////////////////////////////
     if ((sndsock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0)
     {
         perror("socket error : ");
@@ -76,9 +101,7 @@ void setSocket()
     s_addr.sin_family = AF_INET;
     s_addr.sin_addr.s_addr = inet_addr(IPADDR);
     s_addr.sin_port = htons(PORT);
-   
-    ///////////////////////////////////////////////////////////////////
-    //Create Receive Socket////////////////////////////////////////////
+
     if ((rcvsock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0)
     {
         perror("socket error : ");
@@ -114,7 +137,7 @@ void chat_send(char* data, int length)
 }
 
 
-char* chat_receive(int* length)
+char* receive(int* length)
 {    
     static char data[MAX_SIZE];
     *length = recvfrom(rcvsock, data, MAX_SIZE, 0, (struct sockaddr*)&r_addr, &clen);
