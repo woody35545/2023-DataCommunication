@@ -15,7 +15,7 @@
 #define SABM 0x01
 #define UA 0x02
 #define DISC 0x03
-
+#define IFRAME 0x04
 #define MIN_HDLC_SIZE 4
 
 
@@ -37,8 +37,8 @@ char get_hdlc_control(char* hdlc_frame);
 void set_hdlc_addr(char* hdlc_frame, char hdlc_addr);
 void debug_hdlc_frame(char* hdlc_frame);
 
-//void send_sabm(char *input, int length);
 void send_sabm();
+void send_disc();
 
 
 void chat_send(char* data, int length);
@@ -60,21 +60,13 @@ int main(void)
 
     setSocket();
 
-    // pthread_t t_id;
-    // int status = pthread_create(&t_id, NULL, do_thread, NULL);
-    // if (status != 0) {
-    //     printf("Thread Error!\n");
-    //     exit(1);
-    // }
-
     while(1){
     print_titlebar("MAIN PAGE");
-    printf("\t┌──────── STATUS ────────┐\n");        
-        printf("\t│ - Connection: %-8s │\n", (isConnected == 1) ? "O" : "X");
-        printf("\t└────────────────────────┘\n");
+    printf("\t┌──────── STATUS ──────────────┐\n");        
+    printf("\t│ - Connection: %-14s │\n", (isConnected == 1) ? "Connected" : "Not Connected");
+    printf("\t└──────────────────────────────┘\n");
     
-
-        // 메뉴 출력
+    // 메뉴 출력
     printf("\t┌───────── MENU ─────────┐\n");
     printf("\t│ [1] Connect            │\n");
     printf("\t│ [2] Chat               │\n");
@@ -85,7 +77,7 @@ int main(void)
         /* [#] 유효한 값이 입력되지 않으면 오류 메시지 출력되도록 수정예정  */
         printf("[>] 메뉴를 선택하세요: ");
         scanf("%d", &select);
-        printf("────────────────────────────────────────────────────────\n");
+        printf("\n────────────────────────────────────────────────────────\n");
         if(select > 3){
             printf("Invalid number!\n");
         }
@@ -131,7 +123,7 @@ int main(void)
                     print_frame(received, length);
                     sleep(1);
                     print_current_time();
-                    printf("연결 성공\n\n");
+                    printf("연결 완료\n\n");
                     printf("────────────────────────────────────────────────────────\n");
 
                     isConnected = 1;
@@ -147,11 +139,18 @@ int main(void)
         }
 
         if(select == 2){
-            if(isConnected == -1) {printf("[DEBUG] Connect first!\n");}
+            if(isConnected == -1) {
+                printf("[!] 연결이 필요합니다.\n");
+                printf("────────────────────────────────────────────────────────\n");
+                sleep(1); 
+            }
+
             else{
                 
-                printf("[DEBUG] Chat selected!\n");
-                printf("[DEBUG] Chat started!\n");
+                print_titlebar("Chatting");
+                printf("////////////////////////////////////////////////////////////////\n");
+                printf("// [>] 채팅이 시작되었습니다. \t\t\t\t      //\n//\t * 메시지를 입력하신 후 Enter를 누르시면 전송됩니다.  //\n//\t (\"exit\" 또는 \"quit\"을 입력하시면 채팅이 종료됩니다.) //\n");
+                printf("////////////////////////////////////////////////////////////////\n");
 
                 pthread_t t_id;
                 int status = pthread_create(&t_id, NULL, do_thread, NULL);
@@ -162,23 +161,69 @@ int main(void)
                 while (1) {
                     fflush(stdin);
                     fflush(stdout);
-                    printf("[Send] ");
+
+                    time_t t = time(NULL);
+                    struct tm tm = *localtime(&t);
+
                     fgets(input, sizeof(input), stdin);
+
+                    //input[sizeof(input)] = '\0';
+                    printf("\t[%02d시%02d분/전송] %s", tm.tm_hour,tm.tm_min, input);
+
+                    if(strcmp(input, "quit\n")== 0 || strcmp(input, "exit\n")== 0){
+                        printf("\n────────────────────────────────────────────────────────\n");
+                        printf("[>] 채팅을 종료합니다.\n");
+                        printf("────────────────────────────────────────────────────────\n");
+                        sleep(1);
+                        break;
+                    }
                     chat_send(input, strlen(input));   
                 }
             }
         }
 
         if(select == 3){
-            if(isConnected == -1) {printf("[DEBUG] Connect first!\n");}
-            else{
-            printf("[DEBUG] Disconnect selected!\n");
-            
-            // After finishing disConnect
-            isConnected = -1;
+            char received[MAX_SIZE];
+            unsigned int length;
+
+            if(isConnected == -1) {
+                printf("[!] 연결되어 있지 않습니다.\n");
+                printf("────────────────────────────────────────────────────────\n\n");
+                sleep(1);
             }
+            
+            else{         
+                print_current_time();   
+                send_disc();
+                
+                printf("\n\tUA 수신 대기 중...\n");
+
+                while(1)
+                {
+                    strcpy(received, chat_receive(&length));
+                    received[length] = '\0';
+                    if(received[2] == UA) { 
+                        sleep(1);
+                        print_current_time();
+                        printf("Receiver로부터 UA를 수신하였습니다. (크기: %d bytes)\n", length);
+                        printf("  └────> 수신한 프레임(bytes): ");
+                        for(int i=0; i<length; i++){
+                            printf("[%d]%#0.2x ", i, received[i]);
+                        } 
+                        printf("\n");
+                        print_frame(received, length);
+                        sleep(1);
+                        print_current_time();
+                        printf("연결 해제 완료\n\n");
+                        printf("────────────────────────────────────────────────────────\n");
+
+                        isConnected = -1;
+                        break;
+                    }
+                }
         }
     }
+}
 }
 
 void* do_thread(void* arg) {
@@ -188,14 +233,12 @@ void* do_thread(void* arg) {
     while (1) {
         strcpy(received, chat_receive(&length));
         received[length] = '\0';
-        // Reciever로부터 받은 메시지 디버깅을 위해서 String 타입과 Bytes 단위로 출력
-        print_current_time();
-        printf("프레임을 수신하였습니다. (크기: %d bytes)\n", length);
-        printf("\t\tDEBUG > 수신한 프레임(bytes): ");
-        for(int i=0; i<length; i++){
-            printf("[%d]%#0.2x ", i, received[i]);
-        } 
-        printf("\n");
+        time_t t = time(NULL);
+        struct tm tm = *localtime(&t);
+
+        printf("\t[%02d시%02d분/수신] %s", tm.tm_hour,tm.tm_min,received);
+        // printf("우측정렬 테스트\n");
+        // printf("%*s\n",200, received);
     }
     return NULL;
 }
@@ -237,8 +280,23 @@ void setSocket()
 }
 
 void chat_send(char* data, int length)
-{
-    sendto(sndsock, data, length, 0, (struct sockaddr*)&s_addr, sizeof(s_addr));
+{   
+    
+    char hdlc_frame[MAX_SIZE];
+    int total_length = 0; 
+
+    hdlc_frame[0] = DEFAULT_FLAG;   
+    hdlc_frame[1] = 'B'; 
+    hdlc_frame[2] = IFRAME; 
+
+    for(int i=0; i<length; i++){
+        hdlc_frame[i+3] = data[i];
+    }
+
+    hdlc_frame[3+length] = DEFAULT_FLAG;
+    total_length = MIN_HDLC_SIZE + length; // 전체 length 바꿔야함    
+    //print_frame(hdlc_frame,total_length);
+    sendto(sndsock, hdlc_frame, total_length, 0, (struct sockaddr*)&s_addr, sizeof(s_addr));
 }
 
 
@@ -375,6 +433,28 @@ void send_sabm(){
     print_frame(hdlc_frame, total_length);
     
 }
+
+void send_disc(){
+    char hdlc_frame[MAX_SIZE];
+    int total_length = 0; 
+
+    hdlc_frame[0] = DEFAULT_FLAG;
+    hdlc_frame[1] = 'B'; 
+    hdlc_frame[2] = DISC; 
+    hdlc_frame[3] = DEFAULT_FLAG; 
+
+    total_length = 4;
+    
+    //send hdlc packet
+    sendto(sndsock, &hdlc_frame, total_length, 0, (struct sockaddr*)&s_addr, sizeof(s_addr));
+
+    print_current_time();
+    printf("연결 해제를 요청합니다.(DISC)\n");
+    printf("  └────> 보낸 프레임(bytes): \n");
+    print_frame(hdlc_frame, total_length);
+    
+}
+
 
 int get_current_hour(){
     time_t t = time(NULL);
