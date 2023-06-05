@@ -14,7 +14,6 @@
 #define IPADDR "127.0.0.1"
 #define PORT 8811
 #define PORTT 8810
-#define RECEIVER_ADDR 'B' // 자신에게 온 hdlc 패킷인지 확인할 때 사용. Receiver의 주소는 'B'라고 가정
 #define DEFAULT_FLAG 0x7E
 #define SABM 0x01
 #define UA 0x02
@@ -23,27 +22,41 @@
 #define MIN_HDLC_SIZE 4
 #define RECEIVER_ADDR 'B'
 
-
-
 struct control;
 
-void print_current_time();
-void print_frame(const char* array, int length);
-
-void send_ua();
-void debug_hdlc_frame(char* hdlc_frame);
-void chat_send(char* data, int length);
-char* receive(int*);
-char* make_response_str(const char* received_data);
+/* getters */
+int get_iframe_sequence_number(struct control* c);
+int get_iframe_acknowledge_number(struct control* c);
 char get_hdlc_addr(char* hdlc_frame);
 
+/* setters */
+void set_iframe_sequence_number(struct control* c, unsigned seq_num);
+void set_iframe_acknowledge_number(struct control* c, unsigned seq_num);
+
+/* conditions */
+int is_uframe(char* hdlc_frame);
+int is_iframe(char* hdlc_frame);
+int is_sframe(char* hdlc_frame);
+
+/* send functions */
+void send_ua();
+void chat_send(char* data, int length);
+
+/* receive functions */
+char* receive(int*);
+void* do_thread(void*);
+
+/* socket */
 int sndsock, rcvsock;
 int clen;
 struct sockaddr_in s_addr, r_addr;
-
-
 void setSocket(void);
-void* do_thread(void*);
+
+/* etc */
+char* make_response_str(const char* received_data);
+void debug_hdlc_frame(char* hdlc_frame);
+void print_current_time();
+void print_frame(const unsigned char* array, int length);
 
 
 struct control{
@@ -76,8 +89,10 @@ int main(void)
         exit(1);
     }
 
-    
+
+
     while (1) {
+        
         if(isConnected){
 
         fgets(input, sizeof(input), stdin);
@@ -97,10 +112,12 @@ void* do_thread(void* arg) {
     while (1) {
         strcpy(received, receive(&length));
         received[length] = '\0';
+        print_current_time(); printf(" DEBUG\n");
+        print_frame((unsigned char *)received,length);
 
         if(isConnected == 1) {
             // receive chatting
-            if(received[2] == IFRAME) { 
+            if(is_iframe(&received)) { 
                 time_t t = time(NULL);
                 struct tm tm = *localtime(&t);
 
@@ -110,11 +127,13 @@ void* do_thread(void* arg) {
 
                 printf("[%02d시%02d분/수신] ", tm.tm_hour,tm.tm_min);
                 
+                printf("[SEQ:%d, ACK:%d] " , get_iframe_sequence_number(&received[2]) ,get_iframe_acknowledge_number(&received[2]));
                 for(int i=0; i<length-4; i++){
                     data[i] = received[3+i];
                     printf("%c", received[3+i]);
-                }                
-
+                }          
+                printf("\n");
+                
                 char* converted = make_response_str(data);
                 converted[length-4] = '\0';
                 printf("[*] 다음과 같이 응답합니다: %s\n",converted);
@@ -142,7 +161,7 @@ void* do_thread(void* arg) {
         //if(isConnected == -1){
             // 받은 HDLC 프레임이 SABM인지 확인
             if(received[2] == SABM) { 
-                sleep(1);
+                //sleep(1);
                 print_current_time();
                 printf("Sender로부터 SABM을 수신하였습니다.\n");
                 printf("  └─────> 수신한 프레임(%d bytes): ", length);
@@ -150,9 +169,9 @@ void* do_thread(void* arg) {
                     printf("[%d]%#0.2x ", i, received[i]);
                 } printf("\n");
 
-                print_frame(received, length);
+                print_frame((unsigned char *)received, length);
 
-                printf("\t[*] flag, cflag 값을 확인합니다...\n"); sleep(1);
+                printf("\t[*] flag, cflag 값을 확인합니다...\n");
                 if(received[0] == DEFAULT_FLAG && received[length-1] == DEFAULT_FLAG) 
                 {
                     printf("\t  └────> flag:%#02x\n\t  └────> cflag:%#02x\n\t\t\t(확인완료)\n\n", received[0], received[length-1]);}// [!] 조건 추후 수정 예정
@@ -160,7 +179,7 @@ void* do_thread(void* arg) {
                     printf("\n\t\t[!] flag 또는 cflag 값이 유효하지 않습니다.\n");
                 }
 
-                printf("\t[*] Address 값을 확인합니다...\n"); sleep(1);
+                printf("\t[*] Address 값을 확인합니다...\n"); 
                 if(get_hdlc_addr(received) == RECEIVER_ADDR) {
                     printf("\t  └────> address:%c\n\t\t\t(확인완료)\n\n", get_hdlc_addr(received));} 
                 else{
@@ -168,7 +187,7 @@ void* do_thread(void* arg) {
                 }
 
                 // UA 전송
-                sleep(1);
+                //sleep(1);
                 send_ua();
                 
                 print_current_time();
@@ -269,7 +288,7 @@ void send_ua(){
     for(int i=0; i<total_length; i++){
         printf("[%d]%#0.2x ", i, hdlc_frame[i]);
     } printf("\n");
-    print_frame(hdlc_frame,total_length);
+    print_frame((unsigned char *)hdlc_frame,total_length);
 
     //send hdlc packet
     sendto(sndsock, &hdlc_frame, total_length, 0, (struct sockaddr*)&s_addr, sizeof(s_addr));
@@ -295,7 +314,7 @@ void print_current_time(){
     printf("[%02d:%02d:%02d] ", tm.tm_hour, tm.tm_min, tm.tm_sec);
 }
 
-void print_frame(const char* array, int length) {
+void print_frame(const unsigned char* array, int length) {
     // 테이블 헤더 출력
     printf("\t");
     printf("┌────────┬");
@@ -350,4 +369,57 @@ char get_hdlc_addr(char* hdlc_frame){
         printf("Invalid hdlc frame! please check format!"); 
         return -1; }
     return hdlc_frame[1];
+}
+
+
+int is_iframe(char* hdlc_frame){
+    // control field는 hdlc_frame의 index 2에 위치해있음.
+
+    struct control * control_ptr = &hdlc_frame[2];
+    // control(8bit)의 첫비트가 0 이면 iframe임을 의미
+    if(control_ptr->b0 == 0) return 1;
+    return 0; 
+}
+
+int is_uframe(char* hdlc_frame){
+    // control field는 hdlc_frame의 index 2에 위치해있음.
+    struct control * control_ptr = &hdlc_frame[2];
+    // control(8bit)의 첫 두비트가 11 이면 uframe임을 의미
+    if(control_ptr->b0 == 1 && control_ptr->b1 == 1) return 1;
+    return 0; 
+}
+
+int is_sframe(char* hdlc_frame){
+    // control field는 hdlc_frame의 index 2에 위치해있음.
+    struct control * control_ptr = &hdlc_frame[2];
+    // control(8bit)의 첫 두비트가 10 이면 sframe임을 의미
+    if(control_ptr->b0 == 1 && control_ptr->b1 == 0) return 1; 
+    return 0; 
+}
+
+
+int get_iframe_sequence_number(struct control* c){
+    unsigned int res = (c->b1 << 2) | (c->b2 << 1) | c->b3;
+    return res;
+}
+
+int get_iframe_acknowledge_number(struct control* c){
+    unsigned int res = (c->b5 << 2) | (c->b6 << 1) | c->b7;
+    return res;
+}
+
+void set_iframe_sequence_number(struct control* c, unsigned seq_num) {
+    if (seq_num < 8) {
+        c->b1 = (seq_num & 4) >> 2; // 각 자리수에 해당하는 값으로 &를 취해서 해당자리 값만 남긴 후, 한자리 비트값으로 만들기 위해 자리수 만큼 right shift
+        c->b2 = (seq_num & 2) >> 1;
+        c->b3 = seq_num & 1;
+    }
+}
+
+void set_iframe_acknowledge_number(struct control* c, unsigned ack_num){
+    if (ack_num < 8) {
+        c->b5 = (ack_num & 4) >> 2; // 각 자리수에 해당하는 값으로 &를 취해서 해당자리 값만 남긴 후, 한자리 비트값으로 만들기 위해 자리수 만큼 right shift
+        c->b6 = (ack_num & 2) >> 1;
+        c->b7 = ack_num & 1;
+    }
 }

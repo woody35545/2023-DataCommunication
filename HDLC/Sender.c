@@ -18,33 +18,74 @@
 #define IFRAME 0x04
 #define MIN_HDLC_SIZE 4
 #define SENDER_ADDR 'A'
+#define RECEIVER_ADDR 'B'
+#define WINDOW_SIZE 4 // for GBN
+
+void send_frame(char* data, int length);
+
+char buffer[1024] = {0};
+
+/*────────────────────────────────────────────────────────*/
 struct control;
-int isConnected = -1; // Connect 또는 Disconnect 상태를 저장하기 위한 변수. 1: connect, -1: disconnect
 
-void print_current_time();
-void print_frame(const char* array, int length);
-void print_titlebar(const char* selectedMenu);
-
+/* getter */
 char get_hdlc_addr(char* hdlc_frame);
-
-unsigned char* get_hdlc_data(unsigned char* hdlc_frame);
-void set_hdlc_data(unsigned char* hdlc_frame, unsigned char* data);
 char get_hdlc_control(char* hdlc_frame);
-void set_hdlc_addr(char* hdlc_frame, char hdlc_addr);
-void debug_hdlc_frame(char* hdlc_frame);
+unsigned char* get_hdlc_data(unsigned char* hdlc_frame);
+int get_iframe_sequence_number(struct control* c);
 
+/* setter */
+void set_iframe_sequence_number(struct control* c, unsigned seq_num);
+void set_iframe_acknowledge_number(struct control* c, unsigned seq_num);
+int get_iframe_acknowledge_number(struct control* c);
+void set_hdlc_data(unsigned char* hdlc_frame, unsigned char* data);
+void set_hdlc_addr(char* hdlc_frame, char hdlc_addr);
+void set_hdlc_iframe(struct control* control_bits);
+void set_hdlc_uframe(struct control* control_bits);
+void set_hdlc_sframe(struct control* control_bits);
+
+
+
+/* conditions */
+int is_uframe(char* hdlc_frame);
+int is_iframe(char* hdlc_frame);
+int is_sframe(char* hdlc_frame);
+
+
+/* send functions */
 void send_sabm();
 void send_disc();
 
-
-void send_chat(char* data, int length);
-
+/* receive functions */
 char* chat_receive(unsigned int*);
+void* do_thread(void*);
+
+
+/* socket */
 int sndsock, rcvsock;
 int clen;
 struct sockaddr_in s_addr, r_addr;
 void setSocket(void);
-void* do_thread(void*);
+int valread;
+
+/* etc */
+void debug_hdlc_frame(char* hdlc_frame);
+void print_current_time();
+void print_frame(const unsigned char* array, int length);
+void print_titlebar(const char* selectedMenu);
+char* make_chat_frame(char *chat_data, int chat_length);
+
+int DEBUG_MODE = 1;
+int isConnected = -1; // Connect 또는 Disconnect 상태를 저장하기 위한 변수. 1: connect, -1: disconnect
+
+
+/* for GBN */
+int seq = 0;
+int base = 0;
+char* sending_buffer[WINDOW_SIZE];
+
+/*────────────────────────────────────────────────────────*/
+
 
 
 struct control{
@@ -129,9 +170,9 @@ int main(void)
                         printf("[%d]%#0.2x ", i, received[i]);
                     } 
                     printf("\n");
-                    print_frame(received, length);
+                    print_frame((unsigned char*)received, length);
 
-                    printf("\t[*] flag, cflag 값을 확인합니다...\n"); sleep(1);
+                    printf("\t[*] flag, cflag 값을 확인합니다...\n");
                     if(received[0] == DEFAULT_FLAG && received[length-1] == DEFAULT_FLAG) 
                     {
                         printf("\t  └────> flag:%#02x\n\t  └────> cflag:%#02x\n\t\t\t(확인완료)\n\n", received[0], received[length-1]);}// [!] 조건 추후 수정 예정
@@ -139,7 +180,7 @@ int main(void)
                         printf("\n\t\t[!] flag 또는 cflag 값이 유효하지 않습니다.\n");
                     }
 
-                    printf("\t[*] Address 값을 확인합니다...\n"); sleep(1);
+                    printf("\t[*] Address 값을 확인합니다...\n");
                     if(get_hdlc_addr(received) == SENDER_ADDR) 
                     {printf("\t  └────> address:%c\n\t\t\t(확인완료)\n\n", get_hdlc_addr(received));} 
                     else{
@@ -175,24 +216,23 @@ int main(void)
                 printf("////////////////////////////////////////////////////////////////\n");
                 printf("// [>] 채팅이 시작되었습니다. \t\t\t\t      //\n//\t * 메시지를 입력하신 후 Enter를 누르시면 전송됩니다.  //\n//\t (\"exit\" 또는 \"quit\"을 입력하시면 채팅이 종료됩니다.) //\n");
                 printf("////////////////////////////////////////////////////////////////\n");
-
+                sleep(1);
                 pthread_t t_id;
                 int status = pthread_create(&t_id, NULL, do_thread, NULL);
                 if (status != 0) {
                     printf("Thread Error!\n");
                     exit(1);
                 }
+                
                 while (1) {
                     fflush(stdin);
                     fflush(stdout);
-
                     time_t t = time(NULL);
                     struct tm tm = *localtime(&t);
-
                     fgets(input, sizeof(input), stdin);
 
                     //input[sizeof(input)] = '\0';
-                    printf("\t[%02d시%02d분/전송/SEQ:%d] %s", tm.tm_hour,tm.tm_min,seq_num++, input);
+                    //printf("\t[%02d시%02d분/전송/SEQ:%d] %s", tm.tm_hour,tm.tm_min,seq_num++, input);
 
                     if(strcmp(input, "quit\n")== 0 || strcmp(input, "exit\n")== 0){
                         printf("\n────────────────────────────────────────────────────────\n");
@@ -201,7 +241,84 @@ int main(void)
                         sleep(1);
                         break;
                     }
-                    send_chat(input, strlen(input));   
+
+                    // if(seq < base+WINDOW_SIZE){
+                    //     // 현재 sliding window 상태와 보내려는 sequence 비교.
+                    //     sending_buffer[seq % WINDOW_SIZE] = malloc(1024); 
+                    //     if (sending_buffer[seq % WINDOW_SIZE] == NULL) {
+                    //     printf("[!] 메모리 할당에 실패하였습니다.\n");
+                    //     return -1;
+                    // }
+                    
+
+                    char* chat_iframe = make_chat_frame(input, strlen(input));
+
+
+                    printf("[DEBUG] 생성된 chat_iframe:\n");
+                    print_frame((unsigned char*)chat_iframe, MIN_HDLC_SIZE + strlen(input));
+                    //strcpy(sending_buffer[seq % WINDOW_SIZE], chat_iframe);
+                    
+                    // socket을 통해 채팅 내용을 담은 iframe 전송
+                    //send_frame(chat_iframe, MIN_HDLC_SIZE + strlen(input));   
+                    sendto(sndsock, chat_iframe, strlen(input) + MIN_HDLC_SIZE , 0, (struct sockaddr*)&s_addr, sizeof(s_addr));
+
+                    // for (int i = 0; i < WINDOW_SIZE; i++) {
+                    //     if (sending_buffer[i] != NULL) {
+                    //         sendto(sndsock, sending_buffer[i], strlen(input)+MIN_HDLC_SIZE , 0, (struct sockaddr*)&s_addr, sizeof(s_addr));
+                    //         printf("SEND[SEQ:%d] %s", seq, input);
+                    //         } 
+                        
+                    //     }   
+                    // 할당했던 메모리 해제
+                    free(chat_iframe);
+                    seq ++;
+                    // }
+                    // else{ 
+                    //     printf("[!] Sending Buffer가 가득 찼습니다.\n");
+                    // }
+                        /*────────────────────────────────────────────────────────────────────────────────────────────────────────────────*/
+                        //     // Timer start
+                        // time_t start, end;
+                        // double result;
+                        // start = time(NULL);
+
+                        // // Wait for ACK from server
+                        // valread = read(rcvsock, buffer, 1024);
+
+                        // // Timer end
+                        // end = time(NULL);
+                        // result = (double)(end - start);
+
+                        // //if (strcmp(buffer, "ack") == 0 && result <= 5) {
+                        // printf("sizeof(buffer): %d", sizeof(buffer));
+                        // if (sizeof(buffer) > 0 && result <= 5) {
+                        //     printf("Received ACK for frame %d\n", base);
+                        //     base++;
+
+                        //     // Free memory for acknowledged frame
+                        //     free(sending_buffer[(base - 1) % WINDOW_SIZE]);
+                        //     sending_buffer[(base - 1) % WINDOW_SIZE] = NULL;
+
+                        //     if (base % WINDOW_SIZE == 0) {
+                        //         for (int i = 0; i < WINDOW_SIZE; i++) {
+                        //             // send_frames
+                        //             if (sending_buffer[i] != NULL) {
+                        //                 sendto(sndsock, sending_buffer[i], strlen(input)+MIN_HDLC_SIZE , 0, (struct sockaddr*)&s_addr, sizeof(s_addr));
+                        //                 printf("Sending frame with sequence number %d\n", seq_num + i);
+                        //             }
+                        //         }
+                        //     }
+                        // } else {
+                        //     printf("Received NAK for frame %d, resending...\n", base);
+                        //     // Resend frames
+                        //     for (int i = 0; i < WINDOW_SIZE; i++) {
+                        //         if (sending_buffer[i] != NULL) {
+                        //             sendto(sndsock, sending_buffer[i], strlen(input)+MIN_HDLC_SIZE , 0, (struct sockaddr*)&s_addr, sizeof(s_addr));
+                        //             printf("Resending frame with sequence number %d\n", seq_num + i);
+                        //     }
+                        // }
+                        // }
+                        /*────────────────────────────────────────────────────────────────────────────────────────────────────────────────*/
                 }
             }
         }
@@ -235,7 +352,7 @@ int main(void)
                             printf("[%d]%#0.2x ", i, received[i]);
                         } 
                         printf("\n");
-                        print_frame(received, length);
+                        print_frame((unsigned char*)received, length);
                         sleep(1);
                         print_current_time();
                         printf("연결 해제 완료\n\n");
@@ -301,73 +418,93 @@ void setSocket()
 
 }
 
-void send_chat(char* data, int length)
+char* make_chat_frame(char *chat_data, int chat_length) {
+    char* hdlc_frame = (char*)malloc((chat_length + MIN_HDLC_SIZE + 1) * sizeof(char));
+    if (hdlc_frame == NULL) {
+        return NULL;  // 메모리 할당 실패 시 NULL 반환
+    }
+
+    struct control ctr;
+    set_hdlc_iframe(&ctr);
+    set_iframe_sequence_number(&ctr, seq);
+    set_iframe_acknowledge_number(&ctr, 0);
+
+    hdlc_frame[0] = DEFAULT_FLAG;
+    hdlc_frame[1] = 'B';
+    memcpy(&hdlc_frame[2], &ctr, sizeof(struct control));
+    memcpy(&hdlc_frame[3], chat_data, chat_length * sizeof(char));
+    hdlc_frame[3 + chat_length] = DEFAULT_FLAG;
+
+    return hdlc_frame;
+}
+
+void send_frame(char* data, int length)
 {   
-    
-    char hdlc_frame[MAX_SIZE];
-    int total_length = 0; 
-
-    hdlc_frame[0] = DEFAULT_FLAG;   
-    hdlc_frame[1] = 'B'; 
-    hdlc_frame[2] = IFRAME; 
-
-    for(int i=0; i<length; i++){
-        hdlc_frame[i+3] = data[i];
-    }
-
-    hdlc_frame[3+length] = DEFAULT_FLAG;
-    total_length = MIN_HDLC_SIZE + length; 
-    sendto(sndsock, hdlc_frame, total_length, 0, (struct sockaddr*)&s_addr, sizeof(s_addr));
+    sendto(sndsock, data, length, 0, (struct sockaddr*)&s_addr, sizeof(s_addr));
 }
 
-void debug_hdlc_frame(char* hdlc_frame){
-    
-    int total_size = 0; 
-    printf("openning_flag: %#0.2x\n", hdlc_frame[0]);
-    printf("addr: %c\n", hdlc_frame[1]);
-    printf("control: %#0.2x\n", hdlc_frame[2]);
+int is_iframe(char* hdlc_frame){
+    // control field는 hdlc_frame의 index 2에 위치해있음.
 
-    
-    // find closing flag
-    for(int i=3; i<sizeof(MAX_SIZE); i++){
-        if (hdlc_frame[i] == 0x7E) total_size = i+1;
-    }
-    
-    // print hdlc's data field
-    printf("data: ");
-
-    if(total_size==4){printf("empty\n");}
-    else{
-    for(int i=3; i<total_size-2; i++){
-            
-        printf("data: %#0.2x ", hdlc_frame[i]);
-    }
-    printf("\n");
-    }
-    printf("closing_flag: %#0.2x\n", hdlc_frame[total_size-1]);
-    printf("\n");
-//     printf("closing_flag: %#0.2x\n", hdlc_packet.closing_flag);
-//     printf("\n");
-}
-
-
-int is_iframe(struct control* control_bits){
-    if(control_bits->b0 == 0){
-        return 1;
-    }
+    struct control * control_ptr = (struct control *) &hdlc_frame[2];
+    // control(8bit)의 첫비트가 0 이면 iframe임을 의미
+    if(control_ptr->b0 == 0) return 1;
     return 0; 
 }
-int is_uframe(struct control* control_bits){
-    if(control_bits->b0 == 1 && control_bits->b1 == 1){
-        return 1;
-    }
+
+int is_uframe(char* hdlc_frame){
+    // control field는 hdlc_frame의 index 2에 위치해있음.
+    struct control * control_ptr = (struct control *) &hdlc_frame[2];
+    // control(8bit)의 첫 두비트가 11 이면 uframe임을 의미
+    if(control_ptr->b0 == 1 && control_ptr->b1 == 1) return 1;
     return 0; 
 }
-int is_sframe(struct control* control_bits){
-    if(control_bits->b0 == 1 && control_bits->b1 == 0){
-        return 1;
-    }
+
+int is_sframe(char* hdlc_frame){
+    // control field는 hdlc_frame의 index 2에 위치해있음.
+    struct control * control_ptr = (struct control *) &hdlc_frame[2];
+    // control(8bit)의 첫 두비트가 10 이면 sframe임을 의미
+    if(control_ptr->b0 == 1 && control_ptr->b1 == 0) return 1; 
     return 0; 
+}
+
+void set_hdlc_iframe(struct control* control_bits){
+    control_bits->b0 = 0; 
+}
+
+void set_hdlc_uframe(struct control* control_bits){
+    control_bits->b0 = 1;
+    control_bits->b1 = 1; 
+}
+void set_hdlc_sframe(struct control* control_bits){
+    control_bits->b0 = 1;
+    control_bits->b1 = 0; 
+}
+
+void set_iframe_sequence_number(struct control* c, unsigned seq_num) {
+    if (seq_num < 8) {
+        c->b1 = (seq_num & 4) >> 2; // 각 자리수에 해당하는 값으로 &를 취해서 해당자리 값만 남긴 후, 한자리 비트값으로 만들기 위해 자리수 만큼 right shift
+        c->b2 = (seq_num & 2) >> 1;
+        c->b3 = seq_num & 1;
+    }
+}
+
+void set_iframe_acknowledge_number(struct control* c, unsigned ack_num){
+    if (ack_num < 8) {
+        c->b5 = (ack_num & 4) >> 2; // 각 자리수에 해당하는 값으로 &를 취해서 해당자리 값만 남긴 후, 한자리 비트값으로 만들기 위해 자리수 만큼 right shift
+        c->b6 = (ack_num & 2) >> 1;
+        c->b7 = ack_num & 1;
+    }
+}
+
+int get_iframe_sequence_number(struct control* c){
+    unsigned int res = (c->b1 << 2) | (c->b2 << 1) | c->b3;
+    return res;
+}
+
+int get_iframe_acknowledge_number(struct control* c){
+    unsigned int res = (c->b5 << 2) | (c->b6 << 1) | c->b7;
+    return res;
 }
 
 char get_hdlc_addr(char* hdlc_frame){
@@ -468,7 +605,7 @@ void send_sabm(){
     print_current_time();
     printf("연결을 요청합니다.(SABM)\n");
     printf("  └────> 보낸 프레임(%d bytes): \n", total_length);
-    print_frame(hdlc_frame, total_length);
+    print_frame((unsigned char *)hdlc_frame, total_length);
     
 }
 
@@ -489,7 +626,7 @@ void send_disc(){
     print_current_time();
     printf("연결 해제를 요청합니다.(DISC)\n");
     printf("  └────> 보낸 프레임(bytes): \n");
-    print_frame(hdlc_frame, total_length);
+    print_frame((unsigned char*)hdlc_frame, total_length);
     
 }
 
@@ -506,7 +643,7 @@ char* chat_receive(unsigned int* length)
     return data;  
 }
 
-void print_frame(const char* array, int length) {
+void print_frame(const unsigned char* array, int length) {
     // 테이블 헤더 출력
     printf("\t");
     printf("┌────────┬");
@@ -568,3 +705,31 @@ void print_titlebar(const char* selectedMenu) {
 
 }
 
+
+void debug_hdlc_frame(char* hdlc_frame){
+    
+    int total_size = 0; 
+    printf("openning_flag: %#0.2x\n", hdlc_frame[0]);
+    printf("addr: %c\n", hdlc_frame[1]);
+    printf("control: %#0.2x\n", hdlc_frame[2]);
+
+    
+    // find closing flag
+    for(int i=3; i<sizeof(MAX_SIZE); i++){
+        if (hdlc_frame[i] == 0x7E) total_size = i+1;
+    }
+    
+    // print hdlc's data field
+    printf("data: ");
+
+    if(total_size==4){printf("empty\n");}
+    else{
+    for(int i=3; i<total_size-2; i++){
+            
+        printf("data: %#0.2x ", hdlc_frame[i]);
+    }
+    printf("\n");
+    }
+    printf("closing_flag: %#0.2x\n", hdlc_frame[total_size-1]);
+    printf("\n");
+}
