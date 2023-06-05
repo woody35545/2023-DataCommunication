@@ -17,19 +17,15 @@
 #define DISC 0x03
 #define IFRAME 0x04
 #define MIN_HDLC_SIZE 4
-
-
-
-
+#define SENDER_ADDR 'A'
+struct control;
 int isConnected = -1; // Connect 또는 Disconnect 상태를 저장하기 위한 변수. 1: connect, -1: disconnect
-
-int get_current_hour();
-int get_current_min();
-int get_current_sec();
 
 void print_current_time();
 void print_frame(const char* array, int length);
 void print_titlebar(const char* selectedMenu);
+
+char get_hdlc_addr(char* hdlc_frame);
 
 unsigned char* get_hdlc_data(unsigned char* hdlc_frame);
 void set_hdlc_data(unsigned char* hdlc_frame, unsigned char* data);
@@ -41,7 +37,7 @@ void send_sabm();
 void send_disc();
 
 
-void chat_send(char* data, int length);
+void send_chat(char* data, int length);
 
 char* chat_receive(unsigned int*);
 int sndsock, rcvsock;
@@ -50,8 +46,22 @@ struct sockaddr_in s_addr, r_addr;
 void setSocket(void);
 void* do_thread(void*);
 
+
+struct control{
+    unsigned b0 : 1;
+    unsigned b1 : 1;
+    unsigned b2 : 1;
+    unsigned b3 : 1;
+    unsigned b4 : 1;
+    unsigned b5 : 1;
+    unsigned b6 : 1;
+    unsigned b7 : 1;
+};
+
 int main(void)
 {        
+    
+    int seq_num = 0;
     char input[MAX_SIZE];
     char output[MAX_SIZE];
     int length;
@@ -101,7 +111,6 @@ int main(void)
 
                 while(1) {
                 // printf("start_time: %d\n", start_time); 확인해보니까 chat_receive에서 Recv 할 때까지 멈춰버리기 때문에 시간조건 timer로 안됨. 
-                // printf("now: %d\n", (unsigned)time(NULL));
                 if((unsigned)time(NULL) > start_time + 2){
                      printf("연결 시간 초과. 연결에 실패하였습니다.\n");
                       break;}
@@ -121,6 +130,21 @@ int main(void)
                     } 
                     printf("\n");
                     print_frame(received, length);
+
+                    printf("\t[*] flag, cflag 값을 확인합니다...\n"); sleep(1);
+                    if(received[0] == DEFAULT_FLAG && received[length-1] == DEFAULT_FLAG) 
+                    {
+                        printf("\t  └────> flag:%#02x\n\t  └────> cflag:%#02x\n\t\t\t(확인완료)\n\n", received[0], received[length-1]);}// [!] 조건 추후 수정 예정
+                    else{
+                        printf("\n\t\t[!] flag 또는 cflag 값이 유효하지 않습니다.\n");
+                    }
+
+                    printf("\t[*] Address 값을 확인합니다...\n"); sleep(1);
+                    if(get_hdlc_addr(received) == SENDER_ADDR) 
+                    {printf("\t  └────> address:%c\n\t\t\t(확인완료)\n\n", get_hdlc_addr(received));} 
+                    else{
+                        printf("\n\t[!] address 값이 유효하지 않습니다.\n");
+                    }
                     sleep(1);
                     print_current_time();
                     printf("연결 완료\n\n");
@@ -146,7 +170,7 @@ int main(void)
             }
 
             else{
-                
+
                 print_titlebar("Chatting");
                 printf("////////////////////////////////////////////////////////////////\n");
                 printf("// [>] 채팅이 시작되었습니다. \t\t\t\t      //\n//\t * 메시지를 입력하신 후 Enter를 누르시면 전송됩니다.  //\n//\t (\"exit\" 또는 \"quit\"을 입력하시면 채팅이 종료됩니다.) //\n");
@@ -168,7 +192,7 @@ int main(void)
                     fgets(input, sizeof(input), stdin);
 
                     //input[sizeof(input)] = '\0';
-                    printf("\t[%02d시%02d분/전송] %s", tm.tm_hour,tm.tm_min, input);
+                    printf("\t[%02d시%02d분/전송/SEQ:%d] %s", tm.tm_hour,tm.tm_min,seq_num++, input);
 
                     if(strcmp(input, "quit\n")== 0 || strcmp(input, "exit\n")== 0){
                         printf("\n────────────────────────────────────────────────────────\n");
@@ -177,7 +201,7 @@ int main(void)
                         sleep(1);
                         break;
                     }
-                    chat_send(input, strlen(input));   
+                    send_chat(input, strlen(input));   
                 }
             }
         }
@@ -236,9 +260,7 @@ void* do_thread(void* arg) {
         time_t t = time(NULL);
         struct tm tm = *localtime(&t);
 
-        printf("\t[%02d시%02d분/수신] %s", tm.tm_hour,tm.tm_min,received);
-        // printf("우측정렬 테스트\n");
-        // printf("%*s\n",200, received);
+        printf("\t[%02d시%02d분/Receiver 응답] %s", tm.tm_hour,tm.tm_min,received);
     }
     return NULL;
 }
@@ -279,7 +301,7 @@ void setSocket()
 
 }
 
-void chat_send(char* data, int length)
+void send_chat(char* data, int length)
 {   
     
     char hdlc_frame[MAX_SIZE];
@@ -294,11 +316,9 @@ void chat_send(char* data, int length)
     }
 
     hdlc_frame[3+length] = DEFAULT_FLAG;
-    total_length = MIN_HDLC_SIZE + length; // 전체 length 바꿔야함    
-    //print_frame(hdlc_frame,total_length);
+    total_length = MIN_HDLC_SIZE + length; 
     sendto(sndsock, hdlc_frame, total_length, 0, (struct sockaddr*)&s_addr, sizeof(s_addr));
 }
-
 
 void debug_hdlc_frame(char* hdlc_frame){
     
@@ -331,6 +351,24 @@ void debug_hdlc_frame(char* hdlc_frame){
 }
 
 
+int is_iframe(struct control* control_bits){
+    if(control_bits->b0 == 0){
+        return 1;
+    }
+    return 0; 
+}
+int is_uframe(struct control* control_bits){
+    if(control_bits->b0 == 1 && control_bits->b1 == 1){
+        return 1;
+    }
+    return 0; 
+}
+int is_sframe(struct control* control_bits){
+    if(control_bits->b0 == 1 && control_bits->b1 == 0){
+        return 1;
+    }
+    return 0; 
+}
 
 char get_hdlc_addr(char* hdlc_frame){
     /* hldc frame size at least 4 bit */
@@ -429,7 +467,7 @@ void send_sabm(){
 
     print_current_time();
     printf("연결을 요청합니다.(SABM)\n");
-    printf("  └────> 보낸 프레임(bytes): \n");
+    printf("  └────> 보낸 프레임(%d bytes): \n", total_length);
     print_frame(hdlc_frame, total_length);
     
 }
@@ -453,25 +491,6 @@ void send_disc(){
     printf("  └────> 보낸 프레임(bytes): \n");
     print_frame(hdlc_frame, total_length);
     
-}
-
-
-int get_current_hour(){
-    time_t t = time(NULL);
-    struct tm tm = *localtime(&t);
-    return tm.tm_hour;
-}
-
-int get_current_min(){
-    time_t t = time(NULL);
-    struct tm tm = *localtime(&t);
-    return tm.tm_min;
-}
-
-int get_current_sec(){
-    time_t t = time(NULL);
-    struct tm tm = *localtime(&t);
-    return tm.tm_sec;
 }
 
 void print_current_time(){
@@ -546,6 +565,6 @@ void print_titlebar(const char* selectedMenu) {
         printf("═");
     }
     printf("╣\n");
-}
 
+}
 

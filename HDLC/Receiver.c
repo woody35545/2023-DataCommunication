@@ -6,6 +6,8 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <time.h>
+#include <ctype.h>
+
 
 
 #define MAX_SIZE 300
@@ -18,6 +20,12 @@
 #define UA 0x02
 #define DISC 0x03
 #define IFRAME 0x04
+#define MIN_HDLC_SIZE 4
+#define RECEIVER_ADDR 'B'
+
+
+
+struct control;
 
 void print_current_time();
 void print_frame(const char* array, int length);
@@ -26,6 +34,8 @@ void send_ua();
 void debug_hdlc_frame(char* hdlc_frame);
 void chat_send(char* data, int length);
 char* receive(int*);
+char* make_response_str(const char* received_data);
+char get_hdlc_addr(char* hdlc_frame);
 
 int sndsock, rcvsock;
 int clen;
@@ -35,6 +45,17 @@ struct sockaddr_in s_addr, r_addr;
 void setSocket(void);
 void* do_thread(void*);
 
+
+struct control{
+    unsigned b0 : 1;
+    unsigned b1 : 1;
+    unsigned b2 : 1;
+    unsigned b3 : 1;
+    unsigned b4 : 1;
+    unsigned b5 : 1;
+    unsigned b6 : 1;
+    unsigned b7 : 1;
+};
 
 int isConnected = -1; // 1: connected , -1: not connected
 
@@ -85,15 +106,25 @@ void* do_thread(void* arg) {
 
                 // Decapsulate
                 
+                char data[length-4];
 
                 printf("[%02d시%02d분/수신] ", tm.tm_hour,tm.tm_min);
                 
                 for(int i=0; i<length-4; i++){
+                    data[i] = received[3+i];
                     printf("%c", received[3+i]);
-                }
+                }                
+
+                char* converted = make_response_str(data);
+                converted[length-4] = '\0';
+                printf("[*] 다음과 같이 응답합니다: %s\n",converted);
                 
-                //print_frame(received, length); 
+                sleep(1);
+                sendto(sndsock, converted, length-4, 0, (struct sockaddr*)&s_addr, sizeof(s_addr));
+
+            
             }
+
             else if(received[2]==DISC){
                 print_current_time();
                 printf("Sender로부터 연결 해제 요청(DISC)을 수신하였습니다.\n");
@@ -120,6 +151,21 @@ void* do_thread(void* arg) {
                 } printf("\n");
 
                 print_frame(received, length);
+
+                printf("\t[*] flag, cflag 값을 확인합니다...\n"); sleep(1);
+                if(received[0] == DEFAULT_FLAG && received[length-1] == DEFAULT_FLAG) 
+                {
+                    printf("\t  └────> flag:%#02x\n\t  └────> cflag:%#02x\n\t\t\t(확인완료)\n\n", received[0], received[length-1]);}// [!] 조건 추후 수정 예정
+                else{
+                    printf("\n\t\t[!] flag 또는 cflag 값이 유효하지 않습니다.\n");
+                }
+
+                printf("\t[*] Address 값을 확인합니다...\n"); sleep(1);
+                if(get_hdlc_addr(received) == RECEIVER_ADDR) {
+                    printf("\t  └────> address:%c\n\t\t\t(확인완료)\n\n", get_hdlc_addr(received));} 
+                else{
+                    printf("\n\t[!] address 값이 유효하지 않습니다.\n");
+                }
 
                 // UA 전송
                 sleep(1);
@@ -275,4 +321,33 @@ void print_frame(const char* array, int length) {
     printf("└────────┴");
     for (int i = 0; i < length; i++) printf("────────┴");
     printf("\n");
+}
+
+char* make_response_str(const char* received_data) {
+    // ctype.h 헤더를 통해 구현
+
+    int i = 0;
+    char* res = malloc(strlen(received_data) + 1);  // 결과 문자열을 저장할 메모리를 동적으로 할당
+
+    while (received_data[i]) {
+        if (islower(received_data[i])) {
+            res[i] = toupper(received_data[i]);  // 소문자를 대문자로 변환하여 결과 문자열에 저장
+        } else if (isupper(received_data[i])) {
+            res[i] = tolower(received_data[i]);  // 대문자를 소문자로 변환하여 결과 문자열에 저장
+        } else {
+            res[i] = received_data[i];  // 알파벳이 아닌 문자는 그대로 결과 문자열에 저장
+        }
+        i++;
+    }
+
+    res[i] = '\0';  // 결과 문자열의 끝을 표시하는 널 문자('\0') 추가
+    return res;
+}
+
+char get_hdlc_addr(char* hdlc_frame){
+    /* hldc frame size at least 4 bit */
+    if(sizeof(hdlc_frame) < MIN_HDLC_SIZE) { 
+        printf("Invalid hdlc frame! please check format!"); 
+        return -1; }
+    return hdlc_frame[1];
 }
