@@ -91,9 +91,6 @@ int base = 0;
 char* sending_buffer[WINDOW_SIZE];
 
 /*────────────────────────────────────────────────────────*/
-
-
-
 struct control{
     unsigned b0 : 1;
     unsigned b1 : 1;
@@ -198,14 +195,8 @@ int main(void)
 
                     isConnected = 1;
                     break;
-                } // 수신받은 메시지의 control이 UA이면 통과. 
-
-                //else if(wait_start > )
-                
-            }   
-
-                    
-                
+                } // 수신받은 메시지의 control이 UA이면 통과.                 
+            }                     
         }
 
         if(select == 2){
@@ -372,6 +363,23 @@ int main(void)
                         } 
                         printf("\n");
                         print_frame((unsigned char*)received, length);
+
+                            
+                        printf("\t[*] flag, cflag 값을 확인합니다...\n");
+                        if(received[0] == DEFAULT_FLAG && received[length-1] == DEFAULT_FLAG) 
+                        {
+                            printf("\t  └────> flag:%#02x\n\t  └────> cflag:%#02x\n\t\t\t(확인완료)\n\n", received[0], received[length-1]);}// [!] 조건 추후 수정 예정
+                        else{
+                            printf("\n\t\t[!] flag 또는 cflag 값이 유효하지 않습니다.\n");
+                        }
+
+                        printf("\t[*] Address 값을 확인합니다...\n");
+                        if(get_hdlc_addr(received) == SENDER_ADDR) 
+                        {printf("\t  └────> address:%c\n\t\t\t(확인완료)\n\n", get_hdlc_addr(received));} 
+                        else{
+                            printf("\n\t[!] address 값이 유효하지 않습니다.\n");
+                        }
+                        
                         sleep(1);
                         print_current_time();
                         printf("연결 해제 완료\n\n");
