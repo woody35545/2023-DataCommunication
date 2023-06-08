@@ -49,13 +49,10 @@ void set_hdlc_iframe(struct control* control_bits);
 void set_hdlc_uframe(struct control* control_bits);
 void set_hdlc_sframe(struct control* control_bits);
 
-
-
 /* conditions */
 int is_uframe(char* hdlc_frame);
 int is_iframe(char* hdlc_frame);
 int is_sframe(char* hdlc_frame);
-
 
 /* send functions */
 void send_sabm();
@@ -64,7 +61,6 @@ void send_disc();
 /* receive functions */
 char* chat_receive(unsigned int*);
 void* do_thread(void*);
-
 
 /* socket */
 int sndsock, rcvsock;
@@ -78,7 +74,8 @@ void debug_hdlc_frame(char* hdlc_frame);
 void print_current_time();
 void print_frame(const unsigned char* array, int length);
 void print_titlebar(const char* selectedMenu);
-unsigned char* make_chat_frame(char *chat_data, int chat_length);
+// 사용자가 입력한 채팅 데이터로 iframe을 만든후 리턴해주는 함수
+unsigned char* make_chat_frame(char *chat_data, int chat_length); 
 
 int DEBUG_MODE = 1;
 int isConnected = -1; // Connect 또는 Disconnect 상태를 저장하기 위한 변수. 1: connect, -1: disconnect
@@ -137,21 +134,19 @@ int main(void)
 
         if(select == 1){
             print_titlebar("Connect");
-            
-            /* for test */
+
+            // 연결을 위해 Receiver에 SABM(u-frame) 전송
             send_sabm();
 
             // UA를 대기
-            char received[MAX_SIZE];
-            unsigned int length;
+            char received[MAX_SIZE]; // 수신받은 UA 값을 담을 배열 
+            unsigned int length; 
 
-            printf("\n\tUA 수신 대기 중...\n");
-            
+            printf("\n\tUA 수신 대기 중...\n");            
+
             int start_time;
-            
             start_time = (unsigned)time(NULL);
     
-
                 while(1) {
                 // printf("start_time: %d\n", start_time); 확인해보니까 chat_receive에서 Recv 할 때까지 멈춰버리기 때문에 시간조건 timer로 안됨. 
                 if((unsigned)time(NULL) > start_time + 2){
@@ -161,8 +156,7 @@ int main(void)
                 strcpy(received, chat_receive(&length));
                 received[length] = '\0';
                 // Reciever로부터 받은 메시지 디버깅을 위해서 String 타입과 Bytes 단위로 출력
-                
-
+        
                 if(received[2] == UA) { 
                     sleep(1);
                     print_current_time();
@@ -325,8 +319,8 @@ int main(void)
                                 if (sending_buffer[i] != NULL) {
                                     sendto(sndsock, sending_buffer[i], strlen(input)+MIN_HDLC_SIZE , 0, (struct sockaddr*)&s_addr, sizeof(s_addr));
                                     printf("Sequence number %d번 Frame부터 재전송합니다.\n", seq + i);
+                                }
                             }
-                        }
                         }
                         /*────────────────────────────────────────────────────────────────────────────────────────────────────────────────*/
                 }
@@ -344,9 +338,12 @@ int main(void)
             }
             
             else{         
-                print_current_time();   
+
+                print_current_time();                   
+                // 연결 해제를 위해서 Receiver로 DISC(u-frame) 전송
                 send_disc();
                 
+                // DISC 전송 후 Receiver로부터 UA 수신 대기
                 printf("\n\tUA 수신 대기 중...\n");
 
                 while(1)
@@ -364,7 +361,7 @@ int main(void)
                         printf("\n");
                         print_frame((unsigned char*)received, length);
 
-                            
+                        /*────────────────── flag, cflag 값 확인 ──────────────────*/
                         printf("\t[*] flag, cflag 값을 확인합니다...\n");
                         if(received[0] == DEFAULT_FLAG && received[length-1] == DEFAULT_FLAG) 
                         {
@@ -372,14 +369,15 @@ int main(void)
                         else{
                             printf("\n\t\t[!] flag 또는 cflag 값이 유효하지 않습니다.\n");
                         }
-
+                        
+                        /*──────────────────── Address 값 확인 ─────────────────────*/
                         printf("\t[*] Address 값을 확인합니다...\n");
                         if(get_hdlc_addr(received) == SENDER_ADDR) 
                         {printf("\t  └────> address:%c\n\t\t\t(확인완료)\n\n", get_hdlc_addr(received));} 
                         else{
                             printf("\n\t[!] address 값이 유효하지 않습니다.\n");
                         }
-                        
+
                         sleep(1);
                         print_current_time();
                         printf("연결 해제 완료\n\n");
@@ -389,9 +387,9 @@ int main(void)
                         break;
                     }
                 }
+            }
         }
     }
-}
 }
 
 void* do_thread(void* arg) {
@@ -613,28 +611,26 @@ void set_hdlc_data(unsigned char* hdlc_frame, unsigned char* data){
     }
 }
 
-/* Function for testing HDLC packet*/
-//void send_sabm(char *input, int length){
-void send_sabm(){
-    
 
+void send_sabm(){    
+    // Receiver로 SABM 전송하는 함수
     char hdlc_frame[MAX_SIZE];
     int total_length = 0; 
 
-    hdlc_frame[0] = DEFAULT_FLAG;    // set [openning_flag] field
-    hdlc_frame[1] = 'B'; // set [Destination Addr]: 'B' 
-    hdlc_frame[2] = SABM; // set [control] field 
-    // no need to set [data] for SABM
-    hdlc_frame[3] = DEFAULT_FLAG; // set [closing_flag] field
-    //debug_hdlc_frame(hdlc_frame);
+    /* Frame의 각 필드값 할당 */
+    hdlc_frame[0] = DEFAULT_FLAG;   // flag 설정
+    hdlc_frame[1] = RECEIVER_ADDR; // Receiver의 주소(='B')로 목적지 주소를 설정
+    hdlc_frame[2] = SABM; // control을 SABM로 설정
+    // SABM(uframe)은 별도의 데이터를 필요로 하지 않으므로 생략
+    hdlc_frame[3] = DEFAULT_FLAG; // cflag 설정
 
-
-    total_length = 4;
-    // testing get_data function
+    // 별도의 데이터를 포함하지 않기 때문에 전송하는 프레임 크기는 헤더 크기인 MIN_HDLC_SIZE(=4)로 할당
+    total_length = MIN_HDLC_SIZE;
     
-    //send hdlc packet
+    // 생성한 SABM 프레임을 send socket을 이용하여 Receiver로 전송
     sendto(sndsock, &hdlc_frame, total_length, 0, (struct sockaddr*)&s_addr, sizeof(s_addr));
 
+    // 연결 요청했다는 메시지와 방금 보낸 프레임 내용 출력 
     print_current_time();
     printf("연결을 요청합니다.(SABM)\n");
     printf("  └────> 보낸 프레임(%d bytes): \n", total_length);
@@ -664,6 +660,7 @@ void send_disc(){
 }
 
 void print_current_time(){
+    /* 현재 시간 출력해주는 함수 */
     time_t t = time(NULL);
     struct tm tm = *localtime(&t);
     printf("[%02d:%02d:%02d] ", tm.tm_hour, tm.tm_min, tm.tm_sec);
@@ -671,12 +668,17 @@ void print_current_time(){
 
 char* chat_receive(unsigned int* length)
 {    
+    /* 채팅을 Receive Socket을 통해 수신한 후 받은 채팅 데이터를 리턴하는 함수 */
     static char data[MAX_SIZE];
     *length = recvfrom(rcvsock, data, MAX_SIZE, 0, (struct sockaddr*)&r_addr, (unsigned int *)&clen);
     return data;  
 }
 
 void print_frame(const unsigned char* array, int length) {
+    /* 
+        프레임 내에 값을 깔끔하게 테이블 형태로 출력해주기 위한 함수. 
+        바이트 단위 인덱스를 나누고 16진수 형태로 Value를 출력하도록 구현하였음
+    */
     // 테이블 헤더 출력
     printf("\t");
     printf("┌────────┬");
@@ -691,7 +693,6 @@ void print_frame(const unsigned char* array, int length) {
     printf("├────────┼"); for (int i = 0; i < length; i++) printf("────────┼");
     printf("\n");
 
-    // 값 출력
     printf("\t");
     printf("│ Value  │");
     for (int i = 0; i < length; i++) printf("  0x%02x  │", array[i]);
@@ -738,7 +739,7 @@ void print_titlebar(const char* selectedMenu) {
 
 }
 
-
+/* 디버깅용 함수, 과제와 무관한 함수 */ 
 void debug_hdlc_frame(char* hdlc_frame){
     
     int total_size = 0; 
