@@ -91,24 +91,19 @@ int main(void)
         printf("Thread Error!\n");
         exit(1);
     }
-
-
-
     while (1) {
-        
-        if(isConnected){
+       
+        // if(isConnected){
+        // fgets(input, sizeof(input), stdin);
+        // printf("[%02d시%02d분/전송] %s", tm.tm_hour,tm.tm_min, input);
 
-        fgets(input, sizeof(input), stdin);
-        printf("[%02d시%02d분/전송] %s", tm.tm_hour,tm.tm_min, input);
-
-        chat_send(input, strlen(input));   
-        }
+        // chat_send(input, strlen(input));   
+        // }
     }
-    
 }
 
 void* do_thread(void* arg) {
-    unsigned char received[MAX_SIZE];
+    char received[MAX_SIZE];
     time_t t = time(NULL);
     struct tm tm = *localtime(&t);
     int length;
@@ -125,22 +120,27 @@ void* do_thread(void* arg) {
                 
                 char data[length-MIN_HDLC_SIZE];
 
-                printf("[%02d시%02d분/수신]\n", tm.tm_hour,tm.tm_min);
-                printf("  └────> 수신내용 > ");
-                printf("[SEQ:%d] " , get_iframe_sequence_number((struct control *)&received[2]));
+                //printf("[%02d시%02d분/수신]\n", tm.tm_hour,tm.tm_min);
+                //printf("  └────> 수신내용 > ");
+                
+                printf("\t");print_current_time();
+                printf("Received [SEQ:%d] " , get_iframe_sequence_number((struct control *)&received[2]));
                 for(int i=0; i<length-4; i++){
                     data[i] = received[3+i];
                 }          
+                data[length-4] = '\0';
                 printf("%s", data);
-                print_frame(received, length);
+                print_frame((unsigned char *)received, length);
                 
 
                 char* response_data = make_response_str(data);
                 int length_of_response_data = length-4;
                 response_data[length_of_response_data] = '\0';
 
-                printf("[*] Sender에게 다음과 같이 응답을 전송합니다:\n");
-                printf("  └────> 전송 내용 > [ACK:%d] %s\n", get_iframe_sequence_number((struct control *)&received[2])+1 ,response_data);
+                printf("\t[*] Sender에게 다음과 같이 응답을 전송합니다:\n");
+                printf("\t  └────> 전송 내용 > [ACK:%d] %s", get_iframe_sequence_number((struct control *)&received[2])+1 ,response_data);
+                printf("\t"); print_current_time();
+                printf("Send [ACK:%d] %s", get_iframe_sequence_number((struct control *)&received[2])+1 ,response_data);
 
                 
                 /* 응답을 위한 iframe 프레임 생성 */
@@ -155,7 +155,6 @@ void* do_thread(void* arg) {
                 //printf("Contorl ACK 설정 %d\n",get_iframe_sequence_number((struct control *)&received[2]) + 1);
                 set_iframe_acknowledge_number(&ctr, get_iframe_sequence_number((struct control *)&received[2]) + 1); 
                 //printf("control: %#02x %#02x %#02x %#02x %#02x %#02x %#02x %#02x\n", ctr.b0,ctr.b1,ctr.b2,ctr.b3,ctr.b4,ctr.b5,ctr.b6,ctr.b7);
-                
             
                 response_iframe[0] = DEFAULT_FLAG;
                 // Sender 주소를 Destination으로 설정
@@ -362,7 +361,7 @@ char* receive(int* length)
 void print_current_time(){
     time_t t = time(NULL);
     struct tm tm = *localtime(&t);
-    printf("[%02d:%02d:%02d] ", tm.tm_hour, tm.tm_min, tm.tm_sec);
+    printf("(%02d:%02d:%02d) ", tm.tm_hour, tm.tm_min, tm.tm_sec);
 }
 
 void print_frame(const unsigned char* array, int length) {

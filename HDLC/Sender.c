@@ -241,9 +241,7 @@ int main(void)
                     int chat_frame_length = strlen(input) + MIN_HDLC_SIZE;
 
                    
-                    //memset을 사용하여 sending_buffer에 chat_iframe 복사
                     memset(sending_buffer[nextseqnum % WINDOW_SIZE], 0x00, 1024); // sending_buffer 초기화
-                    //memcpy(sending_buffer[nextseqnum % WINDOW_SIZE], chat_iframe, strlen((const char*)chat_iframe)); // [!] 이부분 확인 필요
 
                     unsigned char* p = sending_buffer[nextseqnum % WINDOW_SIZE];
                     for(int i=0; i<chat_frame_length; i++){
