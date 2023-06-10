@@ -327,11 +327,9 @@ void send_ua(){
     hdlc_frame[2] = UA; // set [control] field 
     // no need to set [data] for SABM
     hdlc_frame[3] = DEFAULT_FLAG; // set [closing_flag] field
-    //debug_hdlc_frame(hdlc_frame);
-
 
     total_length = 4;
-    // testing get_data function
+
     print_current_time();
     printf("Sender에게 UA를 전송합니다.\n");
     printf("  └─────> 전송한 프레임(%d bytes): ", total_length);
@@ -365,7 +363,6 @@ void print_current_time(){
 }
 
 void print_frame(const unsigned char* array, int length) {
-    // 테이블 헤더 출력
     printf("\t");
     printf("┌────────┬");
     for (int i = 0; i < length; i++) printf("────────┬"); 
@@ -379,13 +376,11 @@ void print_frame(const unsigned char* array, int length) {
     printf("├────────┼"); for (int i = 0; i < length; i++) printf("────────┼");
     printf("\n");
 
-    // 값 출력
     printf("\t");
     printf("│ Value  │");
     for (int i = 0; i < length; i++) printf("  0x%02x  │", array[i]);
     printf("\n");
 
-    // 구분선 출력
     printf("\t");
     printf("└────────┴");
     for (int i = 0; i < length; i++) printf("────────┴");
@@ -393,23 +388,21 @@ void print_frame(const unsigned char* array, int length) {
 }
 
 char* make_response_str(const char* received_data) {
-    // ctype.h 헤더를 통해 구현
-
     int i = 0;
     char* res = malloc(strlen(received_data) + 1);  // 결과 문자열을 저장할 메모리를 동적으로 할당
 
     while (received_data[i]) {
         if (islower(received_data[i])) {
-            res[i] = toupper(received_data[i]);  // 소문자를 대문자로 변환하여 결과 문자열에 저장
+            res[i] = toupper(received_data[i]);  // 소문자인 경우 대문자로 변환 
         } else if (isupper(received_data[i])) {
-            res[i] = tolower(received_data[i]);  // 대문자를 소문자로 변환하여 결과 문자열에 저장
+            res[i] = tolower(received_data[i]);  // 대문자인 경우 소문자로 변환
         } else {
-            res[i] = received_data[i];  // 알파벳이 아닌 문자는 그대로 결과 문자열에 저장
+            res[i] = received_data[i];  // 알파벳이 아닌 경우 그대로 저장
         }
         i++;
     }
 
-    res[i] = '\0';  // 결과 문자열의 끝을 표시하는 널 문자('\0') 추가
+    res[i] = '\0';  
     return res;
 }
 
@@ -424,7 +417,6 @@ char get_hdlc_addr(char* hdlc_frame){
 
 int is_iframe(char* hdlc_frame){
     // control field는 hdlc_frame의 index 2에 위치해있음.
-
     struct control *control_ptr = (struct control *)&hdlc_frame[2];
     // control(8bit)의 첫비트가 0 이면 iframe임을 의미
     if(control_ptr->b0 == 0) return 1;
@@ -476,19 +468,16 @@ void set_iframe_sequence_number(struct control* c, unsigned seq_num) {
         c->b1 = (seq_num & 4) >> 2; 
         c->b2 = (seq_num & 2) >> 1;
         c->b3 = seq_num & 1;
-        //printf("[DEBUG] $set b1 b2 b3: : %#02x %#02x %#02x\n", c->b1, c->b2, c->b3);
-
     }
 }
 
 void set_iframe_acknowledge_number(struct control* c, unsigned ack_num){
 
     if (ack_num < 8) {
-        c->b5 = (ack_num & 4) >> 2; // 각 자리수에 해당하는 값으로 &를 취해서 해당자리 값만 남긴 후, 한자리 비트값으로 만들기 위해 자리수 만큼 right shift
+        // 각 자리수에 해당하는 값으로 &를 취해서 해당자리 값만 남긴 후, 한자리 비트값으로 만들기 위해 자리수 만큼 right shift
+        c->b5 = (ack_num & 4) >> 2; 
         c->b6 = (ack_num & 2) >> 1;
         c->b7 = ack_num & 1;
-        //printf("[DEBUG] $set b5 b6 b7 : %#02x %#02x %#02x\n", c->b5, c->b6, c->b7);
-
     }
     
 }
