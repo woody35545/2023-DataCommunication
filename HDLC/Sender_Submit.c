@@ -264,7 +264,7 @@ int main(void)
                         /*────────────────────────────────────────────────────────────────────────────────────────────────────────────────*/
                         memset(buffer,0x00, sizeof(buffer));
                         
-                            // Timer start
+                        // Timer start
                         time_t start, end;
                         double result;
                         // GBN timer 시작. 전송 후 ACK를 5초간 대기하고 수신하지 못하면 해당 frame부터 재전송.
@@ -272,9 +272,7 @@ int main(void)
 
                         // Receiver로 부터 ACK 수신 대기
                         valread = read(rcvsock, buffer, 1024);
-
                         char data[valread-MIN_HDLC_SIZE];
-
                         for(int i=0; i<valread-MIN_HDLC_SIZE; i++){
                             data[i] = buffer[3+i];
                         }
@@ -282,23 +280,20 @@ int main(void)
 
                         struct control* c = (struct control *)(&buffer[2]);
             
-                        // 수신한 ACK 번호 출력
-                        printf("\t");print_current_time();
-                        printf("Received[ACK:%d]: %s\n", get_iframe_acknowledge_number(c), data); 
-                        print_frame((unsigned char *)buffer,strlen((const char*)buffer));
-
-    
-                        printf("\n");
-
                         // Timer end
                         end = time(NULL);
                         result = (double)(end - start);
 
                         if (sizeof(buffer) > 0 && result <= 5) {
-                            //printf("Received ACK for frame %d\n", base);
+                            // 수신한 ACK 번호 출력
+                            printf("\t");print_current_time();
+                            printf("Received[ACK:%d]: %s\n", get_iframe_acknowledge_number(c), data); 
+                            print_frame((unsigned char *)buffer,strlen((const char*)buffer));
+                            printf("\n");
+                            
                             base++;
 
-                            // Free memory for acknowledged frame
+                            // ack를 받은 frame에 대한 메모리 해제
                             free(sending_buffer[(base - 1) % WINDOW_SIZE]);
                             sending_buffer[(base - 1) % WINDOW_SIZE] = NULL;
 
@@ -364,7 +359,7 @@ int main(void)
                         printf("\t[*] flag, cflag 값을 확인합니다...\n");
                         if(received[0] == DEFAULT_FLAG && received[length-1] == DEFAULT_FLAG) 
                         {
-                            printf("\t  └────> flag:%#02x\n\t  └────> cflag:%#02x\n\t\t\t(확인완료)\n\n", received[0], received[length-1]);}// [!] 조건 추후 수정 예정
+                            printf("\t  └────> flag:%#02x\n\t  └────> cflag:%#02x\n\t\t\t(확인완료)\n\n", received[0], received[length-1]);}// 
                         else{
                             printf("\n\t\t[!] flag 또는 cflag 값이 유효하지 않습니다.\n");
                         }
@@ -708,16 +703,14 @@ void print_frame(const unsigned char* array, int length) {
 }
 
 void print_titlebar(const char* selectedMenu) {
-    int headerWidth = 14;  // 상단바의 폭
+    int headerWidth = 14;  
 
-    // 상단바 헤더 출력
     printf("╔");
     for (int i = 0; i < headerWidth - 2; i++) {
         printf("═");
     }
     printf("╗\n");
 
-    // 선택된 메뉴 출력
     printf("║");
     int padding = (headerWidth - 2 - strlen(selectedMenu)) / 2;
     for (int i = 0; i < padding; i++) {
@@ -732,7 +725,6 @@ void print_titlebar(const char* selectedMenu) {
     }
     printf("║\n");
 
-    // 상단바 구분선 출력
     printf("╠");
     for (int i = 0; i < headerWidth - 2; i++) {
         printf("═");
