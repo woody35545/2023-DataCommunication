@@ -21,15 +21,11 @@
 #define RECEIVER_ADDR 'B'
 #define WINDOW_SIZE 4 // for GBN
 
-
 int sock = 0, valread;
 struct sockaddr_in serv_addr;
 
-
 void send_frame(char* data, int length);
-
 unsigned char buffer[1024] = {0};
-
 /*────────────────────────────────────────────────────────*/
 struct control;
 
@@ -247,10 +243,7 @@ int main(void)
                     for(int i=0; i<chat_frame_length; i++){
                         p[i] = chat_iframe[i];    
                     }
-                //sendto(sndsock, sending_buffer[nextseqnum % WINDOW_SIZE], chat_frame_length, 0, (struct sockaddr*)&s_addr, sizeof(s_addr));
 
-                    //sending_buffer[nextseqnum % WINDOW_SIZE] = chat_iframe;
-                    
                     // Sending Buffer에 담겨있는 내용 window size 만큼 모두 전송
                     for (int i = 0; i < WINDOW_SIZE; i++) {
                         if (sending_buffer[i] != NULL){
@@ -279,23 +272,16 @@ int main(void)
 
                         // Receiver로 부터 ACK 수신 대기
                         valread = read(rcvsock, buffer, 1024);
-                        
-                        
-                        
+
                         char data[valread-MIN_HDLC_SIZE];
 
                         for(int i=0; i<valread-MIN_HDLC_SIZE; i++){
                             data[i] = buffer[3+i];
-                            //printf("data[%d]: %c\n", i, data[i]);
                         }
                         data[valread-MIN_HDLC_SIZE-1] = '\0';
 
                         struct control* c = (struct control *)(&buffer[2]);
-                        /*────── for DEBUG ──────*/
-                        // printf("ctr(hex): %#02x\n", (unsigned char)buffer[2]);
-                        // printf("ctr: %#02x %#02x %#02x %#02x %#02x %#02x %#02x %#02x\n", c->b0,c->b1,c->b2,c->b3,c->b4,c->b5,c->b6,c->b7 );
-                        /*───────────────────────*/
-                        
+            
                         // 수신한 ACK 번호 출력
                         printf("\t");print_current_time();
                         printf("Received[ACK:%d]: %s\n", get_iframe_acknowledge_number(c), data); 
@@ -529,7 +515,8 @@ void set_hdlc_sframe(struct control* control_bits){
 
 void set_iframe_sequence_number(struct control* c, unsigned seq_num) {
     if (seq_num < 8) {
-        c->b1 = (seq_num & 4) >> 2; // 각 자리수에 해당하는 값으로 &를 취해서 해당자리 값만 남긴 후, 한자리 비트값으로 만들기 위해 자리수 만큼 right shift
+        // 각 자리수에 해당하는 값으로 &를 취해서 해당자리 값만 남긴 후, 한자리 비트값으로 만들기 위해 자리수 만큼 right shift
+        c->b1 = (seq_num & 4) >> 2; 
         c->b2 = (seq_num & 2) >> 1;
         c->b3 = seq_num & 1;
     }
@@ -537,27 +524,24 @@ void set_iframe_sequence_number(struct control* c, unsigned seq_num) {
 
 void set_iframe_acknowledge_number(struct control* c, unsigned ack_num){
     if (ack_num < 8) {
-        c->b5 = (ack_num & 4) >> 2; // 각 자리수에 해당하는 값으로 &를 취해서 해당자리 값만 남긴 후, 한자리 비트값으로 만들기 위해 자리수 만큼 right shift
+        // 각 자리수에 해당하는 값으로 &를 취해서 해당자리 값만 남긴 후, 한자리 비트값으로 만들기 위해 자리수 만큼 right shift
+        c->b5 = (ack_num & 4) >> 2; 
         c->b6 = (ack_num & 2) >> 1;
         c->b7 = ack_num & 1;
     }
 }
 
 int get_iframe_sequence_number(struct control* c){
-    //printf("[DEBUG] b1 b2 b3: : %#02x %#02x %#02x\n", c->b1, c->b2, c->b3);
     unsigned int res = (c->b1 << 2) | (c->b2 << 1) | c->b3;
     return res;
 }
 
 int get_iframe_acknowledge_number(struct control* c){
-    //printf("[DEBUG] b5 b6 b7: : %#02x %#02x %#02x\n", c->b5, c->b6, c->b7);
-
     unsigned int res = (c->b5 << 2) | (c->b6 << 1) | c->b7;
     return res;
 }
 
 char get_hdlc_addr(char* hdlc_frame){
-    /* hldc frame size at least 4 bit */
     if(sizeof(hdlc_frame) < MIN_HDLC_SIZE) { 
         printf("Invalid hdlc frame! please check format!"); 
         return -1; }
