@@ -321,7 +321,7 @@ void send_ua(){
     int total_length = MIN_HDLC_SIZE; // MIN_HDLC_SIZE=4
 
     hdlc_frame[0] = DEFAULT_FLAG; // flag 설정, DEFAULT_FLAG(=0x7E)
-    hdlc_frame[1] = SENDER_ADDER; // sender의 주소인 SENDER_ADDER(='A')로 설정
+    hdlc_frame[1] = SENDER_ADDR; // sender의 주소인 SENDER_ADDER(='A')로 설정
     hdlc_frame[2] = UA; // 사전 정의한 UA에 대한 비트값 UA(=0x02)로 설정
     hdlc_frame[3] = DEFAULT_FLAG; // cflag 설정, DEFAULT_FLAG(=0x7E)
 
