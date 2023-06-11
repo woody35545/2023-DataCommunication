@@ -21,7 +21,7 @@
 #define IFRAME 0x04
 #define MIN_HDLC_SIZE 4
 #define RECEIVER_ADDR 'B'
-
+#define SENDER_ADDR 'A'
 struct control;
 
 /* getters */
@@ -318,18 +318,15 @@ void setSocket()
 
 void send_ua(){
 
-
     char hdlc_frame[MAX_SIZE];
-    int total_length = 0; 
+    int total_length = MIN_HDLC_SIZE; // MIN_HDLC_SIZE=4
 
-    hdlc_frame[0] = DEFAULT_FLAG;    // set [openning_flag] field
-    hdlc_frame[1] = 'A'; // set [Destination Addr]: 'A'
-    hdlc_frame[2] = UA; // set [control] field 
-    // no need to set [data] for SABM
-    hdlc_frame[3] = DEFAULT_FLAG; // set [closing_flag] field
+    hdlc_frame[0] = DEFAULT_FLAG; // flag 설정, DEFAULT_FLAG(=0x7E)
+    hdlc_frame[1] = SENDER_ADDER; // sender의 주소인 SENDER_ADDER(='A')로 설정
+    hdlc_frame[2] = UA; // 사전 정의한 UA에 대한 비트값 UA(=0x02)로 설정
+    hdlc_frame[3] = DEFAULT_FLAG; // cflag 설정, DEFAULT_FLAG(=0x7E)
 
-    total_length = 4;
-
+    // 전송 내용 출력
     print_current_time();
     printf("Sender에게 UA를 전송합니다.\n");
     printf("  └─────> 전송한 프레임(%d bytes): ", total_length);
@@ -337,8 +334,8 @@ void send_ua(){
         printf("[%d]%#0.2x ", i, hdlc_frame[i]);
     } printf("\n");
     print_frame((unsigned char *)hdlc_frame,total_length);
-
-    //send hdlc packet
+    
+    // socket으로 생성한 UA Frame 전송
     sendto(sndsock, &hdlc_frame, total_length, 0, (struct sockaddr*)&s_addr, sizeof(s_addr));
     
 }
