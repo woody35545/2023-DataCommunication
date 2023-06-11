@@ -8,8 +8,6 @@
 #include <time.h>
 #include <ctype.h>
 
-
-
 #define MAX_SIZE 300
 #define IPADDR "127.0.0.1"
 #define PORT 8811
@@ -22,6 +20,7 @@
 #define MIN_HDLC_SIZE 4
 #define RECEIVER_ADDR 'B'
 #define SENDER_ADDR 'A'
+
 struct control;
 
 /* getters */
